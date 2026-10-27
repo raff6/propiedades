@@ -1,1425 +1,788 @@
 <!DOCTYPE html>
 <html lang="es" class="h-full bg-slate-50">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparador de Departamentos - Miramar</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet CSS for Maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        ocean: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            900: '#0c4a6e',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparador de Departamentos - Miramar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:{ocean:{50:'#f0f9ff',100:'#e0f2fe',500:'#0ea5e9',600:'#0284c7',700:'#0369a1',900:'#0c4a6e'}}}}}
+</script>
 </head>
 <body class="h-full font-sans text-slate-800 flex flex-col">
 
-    <!-- Header / Navbar -->
-    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-ocean-600 p-2 rounded-xl text-white">
-                    <i class="fa-solid fa-building text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">Comparador Miramar</h1>
-                    <p class="text-xs text-slate-400">Departamentos 2 Ambientes en Venta</p>
-                </div>
-            </div>
+<header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<div class="bg-ocean-600 p-2 rounded-xl text-white"><i class="fa-solid fa-building text-xl"></i></div>
+<div>
+<h1 class="font-bold text-lg leading-tight">Comparador Miramar</h1>
+<p class="text-xs text-slate-400">Departamentos 2 Ambientes en Venta</p>
+</div>
+</div>
+<div class="flex items-center space-x-3">
+<div class="hidden md:flex items-center space-x-4 text-xs">
+<div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700"><span class="text-slate-400 block">Total Deptos:</span><span class="font-semibold text-ocean-500 text-sm" id="stat-total">14</span></div>
+<div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700"><span class="text-slate-400 block">Visitados:</span><span class="font-semibold text-emerald-400 text-sm" id="stat-visited">0 / 14</span></div>
+<div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700"><span class="text-slate-400 block">Promedio USD/m²:</span><span class="font-semibold text-amber-400 text-sm" id="stat-avg-m2">USD 1,080</span></div>
+</div>
 
-            <div class="flex items-center space-x-3">
-                <!-- Stats summary badges -->
-                <div class="hidden md:flex items-center space-x-4 text-xs">
-                    <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                        <span class="text-slate-400 block">Total Deptos:</span>
-                        <span class="font-semibold text-ocean-500 text-sm" id="stat-total">14</span>
-                    </div>
-                    <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                        <span class="text-slate-400 block">Visitados:</span>
-                        <span class="font-semibold text-emerald-400 text-sm" id="stat-visited">0 / 14</span>
-                    </div>
-                    <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                        <span class="text-slate-400 block">Promedio USD/m²:</span>
-                        <span class="font-semibold text-amber-400 text-sm" id="stat-avg-m2">USD 1,080</span>
-                    </div>
-                </div>
+<div id="cloud-status" class="bg-slate-800 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5" title="Estado de sincronización">
+<i class="fa-solid fa-cloud-arrow-up text-sky-400"></i>
+<span class="hidden xl:inline text-[11px]" id="cloud-status-text">Conectando...</span>
+</div>
 
-                <!-- Cloud Sync Status Badge -->
-                <div id="cloud-status" class="bg-slate-800 text-emerald-400 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5" title="Sincronización en la nube activa">
-                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400 animate-pulse"></i>
-                    <span class="hidden xl:inline text-[11px]" id="cloud-status-text">Sincronizado</span>
-                </div>
+<button onclick="refreshApp()" title="Actualizar datos" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm active:scale-95">
+<i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i><span class="hidden sm:inline">Actualizar Página</span>
+</button>
 
-                <!-- Botón de Actualizar Página / Refrescar Datos -->
-                <button onclick="refreshApp()" title="Actualizar datos y refrescar la vista" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm active:scale-95">
-                    <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
-                    <span class="hidden sm:inline">Actualizar Página</span>
-                </button>
+<button onclick="copyShareLink()" title="Copiar link para abrir en otro dispositivo" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+<i class="fa-solid fa-link"></i><span class="hidden lg:inline">Compartir</span>
+</button>
+<button onclick="exportJSON()" title="Descargar respaldo data.json" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+<i class="fa-solid fa-download"></i><span class="hidden lg:inline">Exportar</span>
+</button>
+<label title="Cargar data.json" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+<i class="fa-solid fa-upload"></i><span class="hidden lg:inline">Importar</span>
+<input type="file" id="import-json-file" accept=".json" onchange="importJSON(event)" class="hidden">
+</label>
+<button onclick="openEditModal(null)" class="bg-ocean-600 hover:bg-ocean-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+<i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nuevo Depto</span>
+</button>
+<button onclick="resetData()" title="Restablecer datos originales" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition">
+<i class="fa-solid fa-rotate-right text-xs"></i>
+</button>
+</div>
+</div>
+</header>
 
-                <!-- Sync JSON Controls -->
-                <button onclick="exportJSON()" title="Descargar respaldo data.json" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-download"></i> <span class="hidden lg:inline">Exportar</span>
-                </button>
-                <label title="Cargar data.json desde tu dispositivo" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-upload"></i> <span class="hidden lg:inline">Importar</span>
-                    <input type="file" id="import-json-file" accept=".json" onchange="importJSON(event)" class="hidden">
-                </label>
+<div class="bg-slate-900 border-b border-slate-800 overflow-x-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 py-2 min-w-max">
+<button id="tab-cards-btn" onclick="switchTab('cards')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition"><i class="fa-solid fa-grip mr-1"></i> Tarjetas y Comparativa</button>
+<button id="tab-map-btn" onclick="switchTab('map')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition"><i class="fa-solid fa-map-location-dot mr-1"></i> Mapa y Análisis USD/m²</button>
+<button id="tab-photos-btn" onclick="switchTab('photos')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition"><i class="fa-solid fa-images mr-1"></i> Galería de Fotos y Links</button>
+</div>
+</div>
 
-                <button onclick="openEditModal(null)" class="bg-ocean-600 hover:bg-ocean-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Nuevo Depto</span>
-                </button>
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-                <button onclick="resetData()" title="Restablecer datos originales" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition">
-                    <i class="fa-solid fa-rotate-right text-xs"></i>
-                </button>
-            </div>
-        </div>
-    </header>
+<div id="view-cards" class="space-y-6">
+<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
+<div class="relative flex-1 min-w-[200px]">
+<i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+<input type="text" id="search-input" onkeyup="applyFilters()" placeholder="Buscar por título, zona o portal..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+</div>
+<div class="flex items-center space-x-1.5 text-xs">
+<label class="text-slate-500 font-medium">Estado:</label>
+<select id="filter-visited" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+<option value="all">Todos</option><option value="visited">Solo Visitados</option><option value="pending">Pendientes de visita</option>
+</select>
+</div>
+<div class="flex items-center space-x-1.5 text-xs">
+<label class="text-slate-500 font-medium">Zona:</label>
+<select id="filter-zone" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+<option value="all">Todas las zonas</option><option value="Zona 1">Zona 1 / Centro</option><option value="Zona I">Zona I</option><option value="Zona 4">Zona 4</option>
+</select>
+</div>
+<div class="flex items-center space-x-1.5 text-xs">
+<label class="text-slate-500 font-medium">Precio Máx:</label>
+<select id="filter-max-price" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+<option value="all">Sin límite</option><option value="40000">Hasta USD 40.000</option><option value="45000">Hasta USD 45.000</option><option value="50000">Hasta USD 50.000</option>
+</select>
+</div>
+<div class="flex items-center space-x-1.5 text-xs">
+<label class="text-slate-500 font-medium">Ordenar:</label>
+<select id="sort-by" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+<option value="default">Por Defecto</option><option value="m2-asc">USD/m²: Menor a Mayor</option><option value="m2-desc">USD/m²: Mayor a Menor</option><option value="price-asc">Precio: Menor a Mayor</option><option value="price-desc">Precio: Mayor a Menor</option><option value="rating-desc">Mejor Calificados</option>
+</select>
+</div>
+</div>
+<div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+</div>
 
-    <!-- Sub-Header View Switcher Tabs -->
-    <div class="bg-slate-900 border-b border-slate-800 overflow-x-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 py-2 min-w-max">
-            <button id="tab-cards-btn" onclick="switchTab('cards')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition">
-                <i class="fa-solid fa-grid-2 mr-1"></i> Tarjetas y Comparativa
-            </button>
-            <button id="tab-map-btn" onclick="switchTab('map')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition">
-                <i class="fa-solid fa-map-location-dot mr-1"></i> Mapa y Análisis USD/m²
-            </button>
-            <button id="tab-photos-btn" onclick="switchTab('photos')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition">
-                <i class="fa-solid fa-images mr-1"></i> Galería de Fotos y Links
-            </button>
-        </div>
-    </div>
+<div id="view-map" class="hidden space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[550px]">
+<div class="p-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+<span class="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin text-ocean-600"></i> Ubicación Geográfica en Miramar</span>
+<span class="text-[11px] text-slate-500">Haz clic en los marcadores para ver el precio/m²</span>
+</div>
+<div id="map" class="flex-1 w-full h-full z-10"></div>
+</div>
+<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-sm text-slate-800 mb-1 flex items-center gap-2"><i class="fa-solid fa-chart-column text-ocean-600"></i> Comparativa USD / m²</h3>
+<p class="text-xs text-slate-500 mb-4">Relación de precio por metro cuadrado útil</p>
+<div class="h-[400px] relative"><canvas id="m2Chart"></canvas></div>
+</div>
+<div class="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-600">
+<i class="fa-solid fa-circle-info text-ocean-600 mr-1"></i> El promedio del mercado local para esta selección es de <strong>USD <span id="chart-avg">1,080</span>/m²</strong>.
+</div>
+</div>
+</div>
+</div>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div id="view-photos" class="hidden space-y-6">
+<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+<h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2"><i class="fa-solid fa-images text-ocean-600"></i> Galería de Fotos y Enlaces Originales</h2>
+<p class="text-xs text-slate-500 mb-6">Explora las publicaciones e imágenes ingresadas de los departamentos seleccionados.</p>
+<div id="photos-links-container" class="space-y-6"></div>
+</div>
+</div>
 
-        <!-- VIEW 1: Cards Grid -->
-        <div id="view-cards" class="space-y-6">
-            
-            <!-- Filters & Controls Bar -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
-                <!-- Search Input -->
-                <div class="relative flex-1 min-w-[200px]">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="text" id="search-input" onkeyup="applyFilters()" placeholder="Buscar por título, zona o portal..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
-                </div>
+</main>
 
-                <!-- Visited Filter -->
-                <div class="flex items-center space-x-1.5 text-xs">
-                    <label class="text-slate-500 font-medium">Estado:</label>
-                    <select id="filter-visited" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
-                        <option value="all">Todos</option>
-                        <option value="visited">Solo Visitados</option>
-                        <option value="pending">Pendientes de visita</option>
-                    </select>
-                </div>
+<!-- EDIT PROPERTY MODAL -->
+<div id="edit-prop-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+<div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+<div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+<h3 class="font-bold text-slate-800 text-sm flex items-center gap-2" id="edit-modal-title"><i class="fa-solid fa-pen-to-square text-ocean-600"></i> Editar Departamento</h3>
+<button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+</div>
+<form id="edit-prop-form" onsubmit="savePropertyData(event)" class="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
+<input type="hidden" id="edit-id">
+<div>
+<label class="block font-semibold text-slate-700 mb-1">Título / Publicación</label>
+<input type="text" id="edit-title" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div><label class="block font-semibold text-slate-700 mb-1">Precio (USD)</label><input type="number" id="edit-price" required min="1000" step="100" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none"></div>
+<div><label class="block font-semibold text-slate-700 mb-1">Superficie (m²)</label><input type="number" id="edit-m2" required min="10" step="1" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none"></div>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div><label class="block font-semibold text-slate-700 mb-1">Ambientes</label><input type="number" id="edit-rooms" required min="1" max="10" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none"></div>
+<div><label class="block font-semibold text-slate-700 mb-1">Zona</label><input type="text" id="edit-zone" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none"></div>
+<div><label class="block font-semibold text-slate-700 mb-1">Portal / Inmobiliaria</label><input type="text" id="edit-portal" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none"></div>
+</div>
+<div>
+<label class="block font-semibold text-slate-700 mb-1">Dirección / Ubicación</label>
+<input type="text" id="edit-address" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+</div>
+<div>
+<label class="block font-semibold text-slate-700 mb-1">Enlace a la publicación original (URL)</label>
+<input type="url" id="edit-url" placeholder="https://..." class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+</div>
+<div>
+<label class="block font-semibold text-slate-700 mb-1">URLs de Fotos (Una por línea)</label>
+<textarea id="edit-photos" rows="3" placeholder="https://imagen1.jpg&#10;https://imagen2.jpg" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none font-mono text-[11px]"></textarea>
+</div>
+<div class="p-3 bg-ocean-50 border border-ocean-100 rounded-lg flex items-center justify-between">
+<span class="text-ocean-900 font-semibold">Valor por m² resultante:</span>
+<span id="calculated-m2-preview" class="text-ocean-700 font-bold text-sm">USD 0 / m²</span>
+</div>
+<div class="pt-2 flex justify-end space-x-2">
+<button type="button" onclick="closeEditModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium">Cancelar</button>
+<button type="submit" class="px-4 py-1.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-medium shadow-sm">Guardar Cambios</button>
+</div>
+</form>
+</div>
+</div>
 
-                <!-- Zone Filter -->
-                <div class="flex items-center space-x-1.5 text-xs">
-                    <label class="text-slate-500 font-medium">Zona:</label>
-                    <select id="filter-zone" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
-                        <option value="all">Todas las zonas</option>
-                        <option value="Zona 1">Zona 1 / Centro</option>
-                        <option value="Zona I">Zona I</option>
-                        <option value="Zona 4">Zona 4</option>
-                    </select>
-                </div>
+<!-- PROS & CONS MODAL -->
+<div id="procon-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+<div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+<div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+<h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-list-check text-ocean-600"></i> Editar Ventajas y Desventajas</h3>
+<button onclick="closeProConModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+</div>
+<div class="p-4 space-y-4 text-xs">
+<input type="hidden" id="procon-id">
+<div>
+<label class="block font-semibold text-emerald-700 mb-1 flex items-center justify-between">
+<span><i class="fa-solid fa-thumbs-up mr-1"></i> Ventajas (Pros)</span>
+<button type="button" onclick="addProInput()" class="text-emerald-600 hover:underline font-normal text-[11px]">+ Agregar</button>
+</label>
+<div id="pros-input-list" class="space-y-1.5"></div>
+</div>
+<div>
+<label class="block font-semibold text-rose-700 mb-1 flex items-center justify-between">
+<span><i class="fa-solid fa-thumbs-down mr-1"></i> Desventajas (Contras)</span>
+<button type="button" onclick="addConInput()" class="text-rose-600 hover:underline font-normal text-[11px]">+ Agregar</button>
+</label>
+<div id="cons-input-list" class="space-y-1.5"></div>
+</div>
+<div class="pt-2 flex justify-end space-x-2 border-t border-slate-100">
+<button type="button" onclick="closeProConModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium">Cancelar</button>
+<button type="button" onclick="saveProCons()" class="px-4 py-1.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-medium shadow-sm">Guardar Lista</button>
+</div>
+</div>
+</div>
+</div>
 
-                <!-- Price Max Filter -->
-                <div class="flex items-center space-x-1.5 text-xs">
-                    <label class="text-slate-500 font-medium">Precio Máx:</label>
-                    <select id="filter-max-price" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
-                        <option value="all">Sin límite</option>
-                        <option value="40000">Hasta USD 40.000</option>
-                        <option value="45000">Hasta USD 45.000</option>
-                        <option value="50000">Hasta USD 50.000</option>
-                    </select>
-                </div>
+<!-- CLOUD SYNC (JSONBlob, sin cuenta) -->
+<script>
+(function () {
+    const API = 'https://jsonblob.com/api/jsonBlob';
+    const HEADERS = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    let blobId = null, remoteStamp = 0, pushTimer = null, pushing = false;
 
-                <!-- Sort By -->
-                <div class="flex items-center space-x-1.5 text-xs">
-                    <label class="text-slate-500 font-medium">Ordenar:</label>
-                    <select id="sort-by" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
-                        <option value="default">Por Defecto</option>
-                        <option value="m2-asc">USD/m²: Menor a Mayor</option>
-                        <option value="m2-desc">USD/m²: Mayor a Menor</option>
-                        <option value="price-asc">Precio: Menor a Mayor</option>
-                        <option value="price-desc">Precio: Mayor a Menor</option>
-                        <option value="rating-desc">Mejor Calificados</option>
-                    </select>
-                </div>
-            </div>
+    function setStatus(text, color, icon) {
+        const el = document.getElementById('cloud-status');
+        const t = document.getElementById('cloud-status-text');
+        if (!el || !t) return;
+        t.innerText = text;
+        el.className = `bg-slate-800 ${color} px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5`;
+        el.querySelector('i').className = `fa-solid ${icon} ${color}`;
+    }
+    function payload(stamp) { return JSON.stringify({ items: window.properties, updatedAt: stamp }); }
+    function adoptId(id) {
+        blobId = id;
+        try { localStorage.setItem('miramar_blob_id', id); } catch (e) {}
+        history.replaceState(null, '', '#blob=' + id);
+    }
+    async function createBlob() {
+        const stamp = Date.now();
+        const r = await fetch(API, { method: 'POST', headers: HEADERS, body: payload(stamp) });
+        const loc = r.headers.get('Location') || r.headers.get('X-jsonblob') || '';
+        const id = loc.split('/').pop();
+        if (!r.ok || !id) throw new Error('No se pudo crear el blob');
+        adoptId(id);
+        remoteStamp = stamp;
+    }
+    function userIsEditing() {
+        const a = document.activeElement;
+        const typing = a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT');
+        const modalOpen = !document.getElementById('edit-prop-modal').classList.contains('hidden') ||
+                          !document.getElementById('procon-modal').classList.contains('hidden');
+        return typing || modalOpen;
+    }
 
-            <!-- Property Cards Grid -->
-            <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Dynamically populated via JS -->
-            </div>
-        </div>
-
-        <!-- VIEW 2: Map & Analytics -->
-        <div id="view-map" class="hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Leaflet Map Container -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[550px]">
-                    <div class="p-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                        <span class="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                            <i class="fa-solid fa-map-pin text-ocean-600"></i> Ubicación Geográfica en Miramar
-                        </span>
-                        <span class="text-[11px] text-slate-500">Haz clic en los marcadores para ver el precio/m²</span>
-                    </div>
-                    <div id="map" class="flex-1 w-full h-full z-10"></div>
-                </div>
-
-                <!-- USD / m2 Bar Chart -->
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                    <div>
-                        <h3 class="font-bold text-sm text-slate-800 mb-1 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-column text-ocean-600"></i> Comparativa USD / m²
-                        </h3>
-                        <p class="text-xs text-slate-500 mb-4">Relación de precio por metro cuadrado útil</p>
-                        <div class="h-[400px] relative">
-                            <canvas id="m2Chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-600">
-                        <i class="fa-solid fa-circle-info text-ocean-600 mr-1"></i> El promedio del mercado local para esta selección es de <strong>USD <span id="chart-avg">1,080</span>/m²</strong>.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VIEW 3: Gallery & Original Links -->
-        <div id="view-photos" class="hidden space-y-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
-                    <i class="fa-solid fa-images text-ocean-600"></i> Galería de Fotos y Enlaces Originales
-                </h2>
-                <p class="text-xs text-slate-500 mb-6">Explora las publicaciones e imágenes ingresadas de los departamentos seleccionados.</p>
-
-                <div id="photos-links-container" class="space-y-6">
-                    <!-- Populated via JS -->
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- EDIT PROPERTY MODAL -->
-    <div id="edit-prop-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2" id="edit-modal-title">
-                    <i class="fa-solid fa-pen-to-square text-ocean-600"></i> Editar Departamento
-                </h3>
-                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <form id="edit-prop-form" onsubmit="savePropertyData(event)" class="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
-                <input type="hidden" id="edit-id">
-
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Título / Publicación</label>
-                    <input type="text" id="edit-title" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Precio (USD)</label>
-                        <input type="number" id="edit-price" required min="1000" step="100" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Superficie (m²)</label>
-                        <input type="number" id="edit-m2" required min="10" step="1" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Ambientes</label>
-                        <input type="number" id="edit-rooms" required min="1" max="10" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Zona</label>
-                        <input type="text" id="edit-zone" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Portal / Inmobiliaria</label>
-                        <input type="text" id="edit-portal" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Dirección / Ubicación</label>
-                    <input type="text" id="edit-address" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Enlace a la publicación original (URL)</label>
-                    <input type="url" id="edit-url" placeholder="https://..." class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">URLs de Fotos (Una por línea)</label>
-                    <textarea id="edit-photos" rows="3" placeholder="https://imagen1.jpg&#10;https://imagen2.jpg" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none font-mono text-[11px]"></textarea>
-                </div>
-
-                <div class="p-3 bg-ocean-50 border border-ocean-100 rounded-lg flex items-center justify-between">
-                    <span class="text-ocean-900 font-semibold">Valor por m² resultante:</span>
-                    <span id="calculated-m2-preview" class="text-ocean-700 font-bold text-sm">USD 0 / m²</span>
-                </div>
-
-                <div class="pt-2 flex justify-end space-x-2">
-                    <button type="button" onclick="closeEditModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium">Cancelar</button>
-                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-medium shadow-sm">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- PROS & CONS MODAL -->
-    <div id="procon-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-ocean-600"></i> Editar Ventajas y Desventajas
-                </h3>
-                <button onclick="closeProConModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <div class="p-4 space-y-4 text-xs">
-                <input type="hidden" id="procon-id">
-
-                <!-- Pros list editor -->
-                <div>
-                    <label class="block font-semibold text-emerald-700 mb-1 flex items-center justify-between">
-                        <span><i class="fa-solid fa-thumbs-up mr-1"></i> Ventajas (Pros)</span>
-                        <button onclick="addProInput()" class="text-emerald-600 hover:underline font-normal text-[11px]">+ Agregar</button>
-                    </label>
-                    <div id="pros-input-list" class="space-y-1.5"></div>
-                </div>
-
-                <!-- Cons list editor -->
-                <div>
-                    <label class="block font-semibold text-rose-700 mb-1 flex items-center justify-between">
-                        <span><i class="fa-solid fa-thumbs-down mr-1"></i> Desventajas (Contras)</span>
-                        <button onclick="addConInput()" class="text-rose-600 hover:underline font-normal text-[11px]">+ Agregar</button>
-                    </label>
-                    <div id="cons-input-list" class="space-y-1.5"></div>
-                </div>
-
-                <div class="pt-2 flex justify-end space-x-2 border-t border-slate-100">
-                    <button type="button" onclick="closeProConModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium">Cancelar</button>
-                    <button type="button" onclick="saveProCons()" class="px-4 py-1.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-medium shadow-sm">Guardar Lista</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Application JavaScript Logic -->
-    <!-- Firebase Script Configuration -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Firebase Configuration & Storage Setup
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'miramar-deptos-app';
-        let db = null;
-        let auth = null;
-        let user = null;
-        let isCloudSyncing = false;
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config)
-            : { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: "demo-project" };
-
+    window.pullFromCloud = async function (force) {
+        if (!blobId || pushTimer || pushing) return;
         try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            // Authenticate first
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
+            const r = await fetch(`${API}/${blobId}`, { headers: HEADERS, cache: 'no-store' });
+            if (r.status === 404) { await createBlob(); setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up'); return; }
+            if (!r.ok) throw new Error('GET ' + r.status);
+            const data = await r.json();
+            if (data && Array.isArray(data.items) && (data.updatedAt || 0) > remoteStamp) {
+                if (!force && userIsEditing()) return;
+                remoteStamp = data.updatedAt;
+                window.properties = data.items;
+                window.saveLocalData();
+                window.initUI();
+                if (typeof map !== 'undefined' && map) updateMapMarkers();
+                if (typeof m2ChartInstance !== 'undefined' && m2ChartInstance) updateChart();
             }
-
-            onAuthStateChanged(auth, (u) => {
-                user = u;
-                if (user) {
-                    initFirestoreSync();
-                }
-            });
+            setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up');
         } catch (err) {
-            console.warn("Cloud Sync offline, running on local storage mode.", err);
-            updateCloudStatusUI('Offline (Local)', 'text-amber-400', 'fa-cloud');
+            console.warn('Sync pull error', err);
+            setStatus('Sin conexión', 'text-amber-400', 'fa-cloud');
         }
+    };
 
-        function updateCloudStatusUI(text, colorClass, iconClass) {
-            const statusEl = document.getElementById('cloud-status');
-            const statusText = document.getElementById('cloud-status-text');
-            if (statusEl && statusText) {
-                statusText.innerText = text;
-                statusEl.className = `bg-slate-800 ${colorClass} px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5`;
-                statusEl.querySelector('i').className = `fa-solid ${iconClass} ${colorClass}`;
-            }
-        }
-
-        // Realtime Cloud Listener
-        function initFirestoreSync() {
-            if (!db || !user) return;
-
-            // Public Collection Path according to strict storage rules
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'properties_list', 'main_list');
-
-            updateCloudStatusUI('Sincronizando...', 'text-sky-400', 'fa-cloud-arrow-up animate-pulse');
-
-            onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const cloudData = docSnap.data();
-                    if (cloudData && Array.isArray(cloudData.items)) {
-                        window.properties = cloudData.items;
-                        window.saveLocalData();
-                        window.initUI();
-                        updateCloudStatusUI('Nube Activa', 'text-emerald-400', 'fa-cloud-check');
-                    }
-                } else {
-                    // Document doesn't exist yet, publish current local properties
-                    window.syncToCloud();
-                }
-            }, (error) => {
-                console.error("Cloud listener error:", error);
-                updateCloudStatusUI('Local Only', 'text-amber-400', 'fa-cloud');
-            });
-        }
-
-        // Global Sync Function
-        window.syncToCloud = async function() {
-            if (!db || !user || isCloudSyncing) return;
+    window.syncToCloud = function () {
+        if (!blobId) return;
+        clearTimeout(pushTimer);
+        setStatus('Guardando...', 'text-amber-400', 'fa-arrows-rotate animate-spin');
+        pushTimer = setTimeout(async () => {
+            pushTimer = null;
+            pushing = true;
+            const stamp = Date.now();
             try {
-                isCloudSyncing = true;
-                updateCloudStatusUI('Guardando...', 'text-amber-400', 'fa-arrows-rotate animate-spin');
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'properties_list', 'main_list');
-                await setDoc(docRef, { 
-                    items: window.properties, 
-                    updatedAt: new Date().toISOString() 
-                }, { merge: true });
-                updateCloudStatusUI('Nube Activa', 'text-emerald-400', 'fa-cloud-check');
+                const r = await fetch(`${API}/${blobId}`, { method: 'PUT', headers: HEADERS, body: payload(stamp) });
+                if (!r.ok) throw new Error('PUT ' + r.status);
+                remoteStamp = stamp;
+                setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up');
             } catch (err) {
-                console.error("Error saving to cloud:", err);
-                updateCloudStatusUI('Error Sync', 'text-rose-400', 'fa-cloud-xmark');
-            } finally {
-                isCloudSyncing = false;
-            }
-        };
-    </script>
+                console.warn('Sync push error', err);
+                setStatus('Error Sync', 'text-rose-400', 'fa-cloud-xmark');
+            } finally { pushing = false; }
+        }, 500);
+    };
 
-    <script>
-        const INITIAL_PROPERTIES = [
-            {
-                id: 1,
-                title: "Departamento 2 Ambientes en Venta en Zona 1",
-                portal: "Zonaprop",
-                address: "Calle 21 y 18, Zona 1, Miramar",
-                zone: "Zona 1",
-                price: 45000,
-                m2: 42,
-                rooms: 2,
-                visited: false,
-                rating: 4,
-                coords: [-38.2721, -57.8352],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Excelente ubicación céntrica", "Muy buen estado de conservación", "Luminoso"],
-                cons: ["Edificio sin cochera"],
-                notes: "Consultar expensas mensuales."
-            },
-            {
-                id: 2,
-                title: "Venta de Departamento en Miramar Zona 1",
-                portal: "Zonaprop",
-                address: "Calle 14 e/ 23 y 25, Miramar",
-                zone: "Zona 1",
-                price: 39500,
-                m2: 38,
-                rooms: 2,
-                visited: true,
-                rating: 3,
-                coords: [-38.2745, -57.8368],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Precio muy competitivo", "Bajas expensas"],
-                cons: ["Piso alto por escalera", "Requiere pintura"],
-                notes: "Visitado el fin de semana. El baño está reciclado."
-            },
-            {
-                id: 3,
-                title: "Depto 2 Ambientes con Cochera Zona 4",
-                portal: "Zonaprop",
-                address: "Calle 27 y 12, Zona 4, Miramar",
-                zone: "Zona 4",
-                price: 52000,
-                m2: 48,
-                rooms: 2,
-                visited: false,
-                rating: 5,
-                coords: [-38.2789, -57.8420],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Incluye cochera cubierta", "Balcón amplio", "Edificio nuevo"],
-                cons: ["Más alejado del centro"],
-                notes: "Acepta permuta de menor valor."
-            },
-            {
-                id: 4,
-                title: "Departamento 2 Ambientes con Balcón Zona 1",
-                portal: "Zonaprop",
-                address: "Calle 19 e/ 20 y 22, Zona 1, Miramar",
-                zone: "Zona 1",
-                price: 48000,
-                m2: 45,
-                rooms: 2,
-                visited: false,
-                rating: 4,
-                coords: [-38.2730, -57.8340],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Vista lateral al mar", "Balcón a la calle"],
-                cons: ["Expensas moderadas"],
-                notes: ""
-            },
-            {
-                id: 5,
-                title: "Departamento Zona 1 - Código: 1108",
-                portal: "Olga Alvarez Barrios",
-                address: "Calle 17 e/ 12 y 14, Miramar",
-                zone: "Zona 1",
-                price: 43000,
-                m2: 40,
-                rooms: 2,
-                visited: true,
-                rating: 4,
-                coords: [-38.2710, -57.8320],
-                url: "https://www.olgaalvarezbarrios.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Ubicación estratégica", "Cocina separada"],
-                cons: ["Contrafrente"],
-                notes: "Agendar segunda visita."
-            },
-            {
-                id: 6,
-                title: "Departamento Zona 1 - Código: 1090",
-                portal: "Olga Alvarez Barrios",
-                address: "Calle 21 e/ 14 y 16, Miramar",
-                zone: "Zona 1",
-                price: 41000,
-                m2: 39,
-                rooms: 2,
-                visited: false,
-                rating: 3,
-                coords: [-38.2735, -57.8355],
-                url: "https://www.olgaalvarezbarrios.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["A 2 cuadras de la playa", "Gas natural conectado"],
-                cons: ["Sin balcón"],
-                notes: ""
-            },
-            {
-                id: 7,
-                title: "Apartamento en Venta Miramar Properati",
-                portal: "Properati",
-                address: "Av. Costanera y Calle 29, Miramar",
-                zone: "Zona I",
-                price: 46000,
-                m2: 41,
-                rooms: 2,
-                visited: false,
-                rating: 4,
-                coords: [-38.2760, -57.8310],
-                url: "https://www.properati.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Vista panorámica al mar", "Edificio con ascensor grande"],
-                cons: ["Cocina algo pequeña"],
-                notes: ""
-            },
-            {
-                id: 8,
-                title: "Depto 2 Amb 43m2 - Avenida 12 1000",
-                portal: "Argenprop",
-                address: "Avenida 12 Nº 1000, Miramar",
-                zone: "Zona 1",
-                price: 44000,
-                m2: 43,
-                rooms: 2,
-                visited: false,
-                rating: 3,
-                coords: [-38.2705, -57.8390],
-                url: "https://www.argenprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Amplio living comedor", "Placard empotrado amplio"],
-                cons: ["Antigüedad 44 años"],
-                notes: "Edificio bien mantenido a pesar de la antigüedad."
-            },
-            {
-                id: 9,
-                title: "Depto 2 Amb Interno PB Calle 18",
-                portal: "Argenprop",
-                address: "Calle 18 Nº 500 Planta Baja, Miramar",
-                zone: "Zona 1",
-                price: 37000,
-                m2: 36,
-                rooms: 2,
-                visited: true,
-                rating: 2,
-                coords: [-38.2728, -57.8375],
-                url: "https://www.argenprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Planta baja", "Muy económico"],
-                cons: ["Interno, poca luz natural", "Patio interno pequeño"],
-                notes: "Descartado por falta de luz solar."
-            },
-            {
-                id: 10,
-                title: "Depto 2 Amb 38m² – Av Costanera 1400",
-                portal: "Roomix",
-                address: "Avenida Costanera 1400, Miramar",
-                zone: "Zona 1",
-                price: 42500,
-                m2: 38,
-                rooms: 2,
-                visited: false,
-                rating: 5,
-                coords: [-38.2750, -57.8300],
-                url: "https://roomix.ai/propiedad/departamento-2-ambientes-miramar-fe3de861",
-                photos: [
-                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Frente al mar", "Balcón saliente", "A 300m de la peatonal", "Lavadero"],
-                cons: ["Disposición al contrafrente"],
-                notes: "Excelente opción para alquiler temporario. Comercializa Sekulich."
-            },
-            {
-                id: 11,
-                title: "Venta Depto 2 amb Frente Luminoso 36m²",
-                portal: "Roomix",
-                address: "Calle 23 e/ 16 y 18, Miramar",
-                zone: "Zona 1",
-                price: 40000,
-                m2: 36,
-                rooms: 2,
-                visited: false,
-                rating: 4,
-                coords: [-38.2738, -57.8360],
-                url: "https://roomix.ai",
-                photos: [
-                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Muy luminoso", "Al frente"],
-                cons: ["36 m² reducidos"],
-                notes: ""
-            },
-            {
-                id: 12,
-                title: "Depto en Venta en Zona I Opción A",
-                portal: "Inmuebles en Miramar",
-                address: "Calle 15 e/ 18 y 20, Miramar",
-                zone: "Zona I",
-                price: 41500,
-                m2: 39,
-                rooms: 2,
-                visited: false,
-                rating: 3,
-                coords: [-38.2718, -57.8348],
-                url: "http://www.inmueblesenmiramar.com",
-                photos: [
-                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Buena relación m2/precio"],
-                cons: ["Requiere arreglos de plomería"],
-                notes: ""
-            },
-            {
-                id: 13,
-                title: "Depto en Venta en Zona I Opción B",
-                portal: "Inmuebles en Miramar",
-                address: "Calle 25 e/ 12 y 14, Miramar",
-                zone: "Zona I",
-                price: 43500,
-                m2: 40,
-                rooms: 2,
-                visited: false,
-                rating: 4,
-                coords: [-38.2755, -57.8370],
-                url: "http://www.inmueblesenmiramar.com",
-                photos: [
-                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Edificio tranquilo", "Pisos flotantes nuevos"],
-                cons: ["Sin cochera"],
-                notes: ""
-            },
-            {
-                id: 14,
-                title: "Depto en Venta en Zona I Opción C",
-                portal: "Inmuebles en Miramar",
-                address: "Calle 19 e/ 16 y 18, Miramar",
-                zone: "Zona I",
-                price: 47000,
-                m2: 44,
-                rooms: 2,
-                visited: false,
-                rating: 4,
-                coords: [-38.2732, -57.8335],
-                url: "http://www.inmueblesenmiramar.com",
-                photos: [
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Piso alto muy luminoso", "Cocina reciclada"],
-                cons: ["Precio un poco más elevado"],
-                notes: ""
-            }
-        ];
+    window.copyShareLink = async function () {
+        try { await navigator.clipboard.writeText(location.href); alert('Link copiado. Abrilo en el otro dispositivo para compartir los mismos datos.'); }
+        catch (e) { prompt('Copiá este link:', location.href); }
+    };
 
-        // Make properties globally available
-        window.properties = [];
-        let photoIndexes = {};
-        let map = null;
-        let markers = [];
-        let m2ChartInstance = null;
-
-        // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
-            loadPropertiesData();
-        });
-
-        // Function to refresh the page/data manually
-        window.refreshApp = function() {
-            const icon = document.getElementById('refresh-icon');
-            if (icon) icon.classList.add('animate-spin');
-            
-            loadPropertiesData();
-            
-            setTimeout(() => {
-                if (icon) icon.classList.remove('animate-spin');
-            }, 600);
-        };
-
-        // Load properties
-        async function loadPropertiesData() {
-            const saved = localStorage.getItem('miramar_deptos_local');
-            if (saved) {
-                try {
-                    window.properties = JSON.parse(saved);
-                } catch(e) {
-                    window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
-                }
-            } else {
-                window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
-            }
-            window.saveLocalData();
-            window.initUI();
+    async function startSync() {
+        const fromHash = (location.hash.match(/blob=([\w-]+)/) || [])[1];
+        let saved = null;
+        try { saved = localStorage.getItem('miramar_blob_id'); } catch (e) {}
+        const id = fromHash || saved;
+        try {
+            if (id) { adoptId(id); await window.pullFromCloud(true); }
+            else { await createBlob(); setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up'); }
+        } catch (err) {
+            console.warn('Sync init error', err);
+            setStatus('Sin conexión', 'text-amber-400', 'fa-cloud');
         }
+        setInterval(() => window.pullFromCloud(false), 5000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) window.pullFromCloud(false); });
+    }
+    window.addEventListener('load', startSync);
+})();
+</script>
 
-        window.initUI = function() {
-            renderCards();
-            updateGlobalStats();
-            renderPhotosView();
+<script>
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80";
+const U = id => `https://images.unsplash.com/photo-${id}?w=600&auto=format&fit=crop&q=80`;
 
-            const priceInput = document.getElementById('edit-price');
-            const m2Input = document.getElementById('edit-m2');
-            if (priceInput && m2Input) {
-                priceInput.addEventListener('input', calculateM2Preview);
-                m2Input.addEventListener('input', calculateM2Preview);
-            }
-        };
+const INITIAL_PROPERTIES = [
+{id:1,title:"Departamento 2 Ambientes en Venta en Zona 1",portal:"Zonaprop",address:"Calle 21 y 18, Zona 1, Miramar",zone:"Zona 1",price:45000,m2:42,rooms:2,visited:false,rating:4,coords:[-38.2721,-57.8352],url:"https://www.zonaprop.com.ar",photos:[U("1522708323590-d24dbb6b0267"),U("1502672260266-1c1ef2d93688")],pros:["Excelente ubicación céntrica","Muy buen estado de conservación","Luminoso"],cons:["Edificio sin cochera"],notes:"Consultar expensas mensuales."},
+{id:2,title:"Venta de Departamento en Miramar Zona 1",portal:"Zonaprop",address:"Calle 14 e/ 23 y 25, Miramar",zone:"Zona 1",price:39500,m2:38,rooms:2,visited:true,rating:3,coords:[-38.2745,-57.8368],url:"https://www.zonaprop.com.ar",photos:[U("1560448204-e02f11c3d0e2"),U("1484154218962-a197022b5858")],pros:["Precio muy competitivo","Bajas expensas"],cons:["Piso alto por escalera","Requiere pintura"],notes:"Visitado el fin de semana. El baño está reciclado."},
+{id:3,title:"Depto 2 Ambientes con Cochera Zona 4",portal:"Zonaprop",address:"Calle 27 y 12, Zona 4, Miramar",zone:"Zona 4",price:52000,m2:48,rooms:2,visited:false,rating:5,coords:[-38.2789,-57.8420],url:"https://www.zonaprop.com.ar",photos:[U("1502005229762-cf1b2da7c5d6"),U("1512917774080-9991f1c4c750")],pros:["Incluye cochera cubierta","Balcón amplio","Edificio nuevo"],cons:["Más alejado del centro"],notes:"Acepta permuta de menor valor."},
+{id:4,title:"Departamento 2 Ambientes con Balcón Zona 1",portal:"Zonaprop",address:"Calle 19 e/ 20 y 22, Zona 1, Miramar",zone:"Zona 1",price:48000,m2:45,rooms:2,visited:false,rating:4,coords:[-38.2730,-57.8340],url:"https://www.zonaprop.com.ar",photos:[U("1493809842364-78817add7ffb")],pros:["Vista lateral al mar","Balcón a la calle"],cons:["Expensas moderadas"],notes:""},
+{id:5,title:"Departamento Zona 1 - Código: 1108",portal:"Olga Alvarez Barrios",address:"Calle 17 e/ 12 y 14, Miramar",zone:"Zona 1",price:43000,m2:40,rooms:2,visited:true,rating:4,coords:[-38.2710,-57.8320],url:"https://www.olgaalvarezbarrios.com.ar",photos:[U("1522708323590-d24dbb6b0267")],pros:["Ubicación estratégica","Cocina separada"],cons:["Contrafrente"],notes:"Agendar segunda visita."},
+{id:6,title:"Departamento Zona 1 - Código: 1090",portal:"Olga Alvarez Barrios",address:"Calle 21 e/ 14 y 16, Miramar",zone:"Zona 1",price:41000,m2:39,rooms:2,visited:false,rating:3,coords:[-38.2735,-57.8355],url:"https://www.olgaalvarezbarrios.com.ar",photos:[U("1502672260266-1c1ef2d93688")],pros:["A 2 cuadras de la playa","Gas natural conectado"],cons:["Sin balcón"],notes:""},
+{id:7,title:"Apartamento en Venta Miramar Properati",portal:"Properati",address:"Av. Costanera y Calle 29, Miramar",zone:"Zona I",price:46000,m2:41,rooms:2,visited:false,rating:4,coords:[-38.2760,-57.8310],url:"https://www.properati.com.ar",photos:[U("1560448204-e02f11c3d0e2")],pros:["Vista panorámica al mar","Edificio con ascensor grande"],cons:["Cocina algo pequeña"],notes:""},
+{id:8,title:"Depto 2 Amb 43m2 - Avenida 12 1000",portal:"Argenprop",address:"Avenida 12 Nº 1000, Miramar",zone:"Zona 1",price:44000,m2:43,rooms:2,visited:false,rating:3,coords:[-38.2705,-57.8390],url:"https://www.argenprop.com.ar",photos:[U("1512917774080-9991f1c4c750")],pros:["Amplio living comedor","Placard empotrado amplio"],cons:["Antigüedad 44 años"],notes:"Edificio bien mantenido a pesar de la antigüedad."},
+{id:9,title:"Depto 2 Amb Interno PB Calle 18",portal:"Argenprop",address:"Calle 18 Nº 500 Planta Baja, Miramar",zone:"Zona 1",price:37000,m2:36,rooms:2,visited:true,rating:2,coords:[-38.2728,-57.8375],url:"https://www.argenprop.com.ar",photos:[U("1484154218962-a197022b5858")],pros:["Planta baja","Muy económico"],cons:["Interno, poca luz natural","Patio interno pequeño"],notes:"Descartado por falta de luz solar."},
+{id:10,title:"Depto 2 Amb 38m² – Av Costanera 1400",portal:"Roomix",address:"Avenida Costanera 1400, Miramar",zone:"Zona 1",price:42500,m2:38,rooms:2,visited:false,rating:5,coords:[-38.2750,-57.8300],url:"https://roomix.ai/propiedad/departamento-2-ambientes-miramar-fe3de861",photos:[U("1502005229762-cf1b2da7c5d6"),U("1522708323590-d24dbb6b0267")],pros:["Frente al mar","Balcón saliente","A 300m de la peatonal","Lavadero"],cons:["Disposición al contrafrente"],notes:"Excelente opción para alquiler temporario. Comercializa Sekulich."},
+{id:11,title:"Venta Depto 2 amb Frente Luminoso 36m²",portal:"Roomix",address:"Calle 23 e/ 16 y 18, Miramar",zone:"Zona 1",price:40000,m2:36,rooms:2,visited:false,rating:4,coords:[-38.2738,-57.8360],url:"https://roomix.ai",photos:[U("1493809842364-78817add7ffb")],pros:["Muy luminoso","Al frente"],cons:["36 m² reducidos"],notes:""},
+{id:12,title:"Depto en Venta en Zona I Opción A",portal:"Inmuebles en Miramar",address:"Calle 15 e/ 18 y 20, Miramar",zone:"Zona I",price:41500,m2:39,rooms:2,visited:false,rating:3,coords:[-38.2718,-57.8348],url:"http://www.inmueblesenmiramar.com",photos:[U("1560448204-e02f11c3d0e2")],pros:["Buena relación m2/precio"],cons:["Requiere arreglos de plomería"],notes:""},
+{id:13,title:"Depto en Venta en Zona I Opción B",portal:"Inmuebles en Miramar",address:"Calle 25 e/ 12 y 14, Miramar",zone:"Zona I",price:43500,m2:40,rooms:2,visited:false,rating:4,coords:[-38.2755,-57.8370],url:"http://www.inmueblesenmiramar.com",photos:[U("1502672260266-1c1ef2d93688")],pros:["Edificio tranquilo","Pisos flotantes nuevos"],cons:["Sin cochera"],notes:""},
+{id:14,title:"Depto en Venta en Zona I Opción C",portal:"Inmuebles en Miramar",address:"Calle 19 e/ 16 y 18, Miramar",zone:"Zona I",price:47000,m2:44,rooms:2,visited:false,rating:4,coords:[-38.2732,-57.8335],url:"http://www.inmueblesenmiramar.com",photos:[U("1522708323590-d24dbb6b0267")],pros:["Piso alto muy luminoso","Cocina reciclada"],cons:["Precio un poco más elevado"],notes:""}
+];
 
-        window.saveLocalData = function() {
-            localStorage.setItem('miramar_deptos_local', JSON.stringify(window.properties));
-        };
+window.properties = [];
+let photoIndexes = {}, map = null, markers = [], m2ChartInstance = null;
 
-        function triggerDataChange() {
-            window.saveLocalData();
-            if (typeof window.syncToCloud === 'function') {
-                window.syncToCloud();
-            }
-            renderCards();
-            updateGlobalStats();
-            if (map) updateMapMarkers();
-            if (m2ChartInstance) updateChart();
-            renderPhotosView();
-        }
+window.addEventListener('DOMContentLoaded', () => { loadPropertiesData(); });
 
-        // Export/Import Local JSON
-        function exportJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.properties, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "data.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
+window.refreshApp = function () {
+    const icon = document.getElementById('refresh-icon');
+    if (icon) icon.classList.add('animate-spin');
+    loadPropertiesData();
+    if (window.pullFromCloud) window.pullFromCloud(true);
+    setTimeout(() => { if (icon) icon.classList.remove('animate-spin'); }, 600);
+};
 
-        function importJSON(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (Array.isArray(importedData)) {
-                        window.properties = importedData;
-                        triggerDataChange();
-                        alert("¡Datos importados y sincronizados con éxito!");
-                    } else {
-                        alert("El archivo no tiene el formato JSON válido.");
-                    }
-                } catch (err) {
-                    alert("Error al leer el archivo JSON.");
-                }
-            };
-            if (event.target.files[0]) {
-                fileReader.readAsText(event.target.files[0]);
-            }
-        }
+async function loadPropertiesData() {
+    const saved = localStorage.getItem('miramar_deptos_local');
+    if (saved) {
+        try { window.properties = JSON.parse(saved); }
+        catch (e) { window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES)); }
+    } else {
+        window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
+    }
+    window.saveLocalData();
+    window.initUI();
+}
 
-        function resetData() {
-            if (confirm("¿Deseas restablecer todos los datos a la lista inicial?")) {
-                localStorage.removeItem('miramar_deptos_local');
-                window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
+window.initUI = function () {
+    renderCards();
+    updateGlobalStats();
+    renderPhotosView();
+};
+
+window.saveLocalData = function () {
+    localStorage.setItem('miramar_deptos_local', JSON.stringify(window.properties));
+};
+
+function triggerDataChange() {
+    window.saveLocalData();
+    if (typeof window.syncToCloud === 'function') window.syncToCloud();
+    renderCards();
+    updateGlobalStats();
+    if (map) updateMapMarkers();
+    if (m2ChartInstance) updateChart();
+    renderPhotosView();
+}
+
+function exportJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.properties, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", "data.json");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+function importJSON(event) {
+    const fr = new FileReader();
+    fr.onload = function (e) {
+        try {
+            const d = JSON.parse(e.target.result);
+            if (Array.isArray(d)) {
+                window.properties = d;
                 triggerDataChange();
-            }
-        }
-
-        // Calculate Opportunity Score
-        function calculateOpportunityScore(p, avgM2) {
-            const m2Val = p.price / p.m2;
-            let score = 50; // base
-
-            // Price ratio compared to market average
-            if (avgM2 > 0) {
-                const diffRatio = (avgM2 - m2Val) / avgM2; 
-                score += diffRatio * 100; // cheaper -> higher score
-            }
-
-            // Pros and Cons weight
-            score += (p.pros ? p.pros.length : 0) * 5;
-            score -= (p.cons ? p.cons.length : 0) * 5;
-
-            // User rating weight
-            if (p.rating) score += (p.rating - 3) * 10;
-
-            return Math.min(Math.max(Math.round(score), 10), 99);
-        }
-
-        // Global Statistics Update
-        function updateGlobalStats() {
-            const total = window.properties.length;
-            const visited = window.properties.filter(p => p.visited).length;
-            
-            let avgM2 = 0;
-            if (total > 0) {
-                const sumM2 = window.properties.reduce((acc, p) => acc + (p.price / p.m2), 0);
-                avgM2 = Math.round(sumM2 / total);
-            }
-
-            document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-visited').innerText = `${visited} / ${total}`;
-            document.getElementById('stat-avg-m2').innerText = `USD ${avgM2.toLocaleString()}`;
-            
-            const chartAvgEl = document.getElementById('chart-avg');
-            if (chartAvgEl) chartAvgEl.innerText = avgM2.toLocaleString();
-        }
-
-        // Render Property Cards
-        function renderCards() {
-            const container = document.getElementById('cards-container');
-            if (!container) return;
-            
-            const filtered = getFilteredProperties();
-            container.innerHTML = '';
-
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
-                        <i class="fa-solid fa-building-circle-xmark text-4xl mb-2"></i>
-                        <p class="text-sm font-medium">No se encontraron departamentos con los filtros aplicados.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const total = window.properties.length;
-            const avgM2 = total > 0 ? Math.round(window.properties.reduce((acc, p) => acc + (p.price / p.m2), 0) / total) : 1080;
-
-            filtered.forEach(p => {
-                const pricePerM2 = Math.round(p.price / p.m2);
-                if (photoIndexes[p.id] === undefined) photoIndexes[p.id] = 0;
-                const currentPhotoIdx = photoIndexes[p.id];
-                const oppScore = calculateOpportunityScore(p, avgM2);
-
-                let badgeColor = "bg-amber-500 text-white";
-                if (oppScore >= 75) badgeColor = "bg-emerald-600 text-white";
-                else if (oppScore < 45) badgeColor = "bg-slate-600 text-white";
-
-                const card = document.createElement('div');
-                card.className = `bg-white rounded-xl shadow-sm border ${p.visited ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200'} overflow-hidden flex flex-col justify-between transition hover:shadow-md`;
-
-                card.innerHTML = `
-                    <div>
-                        <!-- Photo Carousel Header -->
-                        <div class="relative h-48 bg-slate-900 group">
-                            <img src="${p.photos[currentPhotoIdx] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80'}" 
-                                 alt="${p.title}" 
-                                 class="w-full h-full object-cover" 
-                                 onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80'">
-
-                            <!-- Portal Badge -->
-                            <span class="absolute top-2 left-2 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded backdrop-blur-sm">
-                                ${p.portal}
-                            </span>
-
-                            <!-- Opportunity Smart Score -->
-                            <span class="absolute bottom-2 right-2 ${badgeColor} text-[10px] font-bold px-2 py-1 rounded-md shadow-md flex items-center gap-1" title="Score de oportunidad calculado">
-                                <i class="fa-solid fa-bolt"></i> Score: ${oppScore}/100
-                            </span>
-
-                            <!-- Visited Toggle Button -->
-                            <button onclick="toggleVisited(${p.id})" class="absolute top-2 right-2 ${p.visited ? 'bg-emerald-600 text-white' : 'bg-slate-900/70 text-slate-200 hover:bg-slate-900'} text-[11px] font-semibold px-2.5 py-1 rounded-lg backdrop-blur-sm transition flex items-center gap-1">
-                                <i class="fa-solid ${p.visited ? 'fa-circle-check' : 'fa-circle'} text-[10px]"></i>
-                                <span>${p.visited ? 'Visitado' : 'Pendiente'}</span>
-                            </button>
-
-                            <!-- Carousel Controls (If > 1 photo) -->
-                            ${p.photos.length > 1 ? `
-                                <button onclick="prevPhoto(${p.id}, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 transition">
-                                    <i class="fa-solid fa-chevron-left"></i>
-                                </button>
-                                <button onclick="nextPhoto(${p.id}, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 transition">
-                                    <i class="fa-solid fa-chevron-right"></i>
-                                </button>
-                                <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/70 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                    ${currentPhotoIdx + 1} / ${p.photos.length}
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <!-- Card Content -->
-                        <div class="p-4 space-y-3">
-                            <div class="flex justify-between items-start gap-2">
-                                <div>
-                                    <h3 class="font-bold text-slate-800 text-sm leading-snug line-clamp-2">${p.title}</h3>
-                                    <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                                        <i class="fa-solid fa-location-dot text-slate-400"></i> ${p.address}
-                                    </p>
-                                </div>
-                                <button onclick="openEditModal(${p.id})" title="Editar Departamento" class="text-slate-400 hover:text-ocean-600 p-1">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                            </div>
-
-                            <!-- Pricing & m2 stats -->
-                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 grid grid-cols-2 gap-2 text-center">
-                                <div>
-                                    <span class="text-[10px] uppercase font-semibold text-slate-400 block">Precio Total</span>
-                                    <span class="font-bold text-slate-800 text-base">USD ${p.price.toLocaleString()}</span>
-                                </div>
-                                <div class="border-l border-slate-200 pl-2">
-                                    <span class="text-[10px] uppercase font-semibold text-slate-400 block">Valor por m²</span>
-                                    <span class="font-bold text-ocean-600 text-base">USD ${pricePerM2.toLocaleString()}</span>
-                                </div>
-                            </div>
-
-                            <!-- Specs & Room Badges -->
-                            <div class="flex items-center justify-between text-xs text-slate-600 px-1 pt-1 border-b border-slate-100 pb-2">
-                                <span><i class="fa-solid fa-ruler-combined text-slate-400 mr-1"></i> ${p.m2} m² cubiertos</span>
-                                <span><i class="fa-solid fa-door-open text-slate-400 mr-1"></i> ${p.rooms} amb</span>
-                                <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium text-slate-600">${p.zone}</span>
-                            </div>
-
-                            <!-- Rating stars -->
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-500 font-medium">Calificación:</span>
-                                <div class="flex space-x-1 text-amber-400">
-                                    ${[1, 2, 3, 4, 5].map(star => `
-                                        <button onclick="setRating(${p.id}, ${star})" class="focus:outline-none hover:scale-110 transition">
-                                            <i class="${star <= (p.rating || 0) ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-                                        </button>
-                                    `).join('')}
-                                </div>
-                            </div>
-
-                            <!-- Pros & Cons list -->
-                            <div class="space-y-1.5 pt-1">
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="font-semibold text-slate-700">Pros / Contras</span>
-                                    <button onclick="openProConModal(${p.id})" class="text-ocean-600 hover:underline text-[11px]">Editar</button>
-                                </div>
-                                
-                                <ul class="text-[11px] space-y-1">
-                                    ${p.pros ? p.pros.map(pro => `
-                                        <li class="text-emerald-700 flex items-start gap-1.5">
-                                            <i class="fa-solid fa-check text-emerald-500 mt-0.5"></i> <span>${pro}</span>
-                                        </li>
-                                    `).join('') : ''}
-                                    ${p.cons ? p.cons.map(con => `
-                                        <li class="text-rose-700 flex items-start gap-1.5">
-                                            <i class="fa-solid fa-xmark text-rose-500 mt-0.5"></i> <span>${con}</span>
-                                        </li>
-                                    `).join('') : ''}
-                                </ul>
-                            </div>
-
-                            <!-- Personal Notes field -->
-                            <div class="pt-2">
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Notas personales:</label>
-                                <textarea onblur="updateNote(${p.id}, this.value)" placeholder="Escribe impresiones o detalles de la visita..." class="w-full text-xs p-2 border border-slate-200 rounded-lg focus:ring-1 focus:ring-ocean-500 focus:outline-none bg-slate-50/50 resize-none" rows="2">${p.notes || ''}</textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer Link Button -->
-                    <div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <a href="${p.url}" target="_blank" class="text-ocean-600 hover:text-ocean-700 font-semibold flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Ver en ${p.portal}
-                        </a>
-                        <button onclick="deleteProperty(${p.id})" class="text-slate-400 hover:text-rose-600 transition" title="Eliminar departamento">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-        }
-
-        // Carousel Photos controls
-        function prevPhoto(id, e) {
-            e.stopPropagation();
-            const prop = window.properties.find(p => p.id === id);
-            if (!prop) return;
-            if (photoIndexes[id] > 0) {
-                photoIndexes[id]--;
+                alert("¡Datos importados y sincronizados con éxito!");
             } else {
-                photoIndexes[id] = prop.photos.length - 1;
+                alert("El archivo no tiene el formato JSON válido.");
             }
-            renderCards();
-        }
+        } catch (err) { alert("Error al leer el archivo JSON."); }
+    };
+    if (event.target.files[0]) fr.readAsText(event.target.files[0]);
+}
 
-        function nextPhoto(id, e) {
-            e.stopPropagation();
-            const prop = window.properties.find(p => p.id === id);
-            if (!prop) return;
-            if (photoIndexes[id] < prop.photos.length - 1) {
-                photoIndexes[id]++;
-            } else {
-                photoIndexes[id] = 0;
+function resetData() {
+    if (confirm("¿Deseas restablecer todos los datos a la lista inicial?")) {
+        localStorage.removeItem('miramar_deptos_local');
+        window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
+        triggerDataChange();
+    }
+}
+
+function calculateOpportunityScore(p, avgM2) {
+    const m2Val = p.price / p.m2;
+    let score = 50;
+    if (avgM2 > 0) score += ((avgM2 - m2Val) / avgM2) * 100;
+    score += (p.pros ? p.pros.length : 0) * 5;
+    score -= (p.cons ? p.cons.length : 0) * 5;
+    if (p.rating) score += (p.rating - 3) * 10;
+    return Math.min(Math.max(Math.round(score), 10), 99);
+}
+
+function averageM2() {
+    const n = window.properties.length;
+    return n > 0 ? Math.round(window.properties.reduce((a, p) => a + (p.price / p.m2), 0) / n) : 0;
+}
+
+function updateGlobalStats() {
+    const total = window.properties.length;
+    const visited = window.properties.filter(p => p.visited).length;
+    const avgM2 = averageM2();
+    document.getElementById('stat-total').innerText = total;
+    document.getElementById('stat-visited').innerText = `${visited} / ${total}`;
+    document.getElementById('stat-avg-m2').innerText = `USD ${avgM2.toLocaleString()}`;
+    const c = document.getElementById('chart-avg');
+    if (c) c.innerText = avgM2.toLocaleString();
+}
+
+function renderCards() {
+    const container = document.getElementById('cards-container');
+    if (!container) return;
+    const filtered = getFilteredProperties();
+    container.innerHTML = '';
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200"><i class="fa-solid fa-building-circle-xmark text-4xl mb-2"></i><p class="text-sm font-medium">No se encontraron departamentos con los filtros aplicados.</p></div>`;
+        return;
+    }
+
+    const avgM2 = averageM2() || 1080;
+
+    filtered.forEach(p => {
+        const pricePerM2 = Math.round(p.price / p.m2);
+        if (photoIndexes[p.id] === undefined || photoIndexes[p.id] >= p.photos.length) photoIndexes[p.id] = 0;
+        const idx = photoIndexes[p.id];
+        const oppScore = calculateOpportunityScore(p, avgM2);
+        let badgeColor = "bg-amber-500 text-white";
+        if (oppScore >= 75) badgeColor = "bg-emerald-600 text-white";
+        else if (oppScore < 45) badgeColor = "bg-slate-600 text-white";
+
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-xl shadow-sm border ${p.visited ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200'} overflow-hidden flex flex-col justify-between transition hover:shadow-md`;
+
+        card.innerHTML = `
+<div>
+<div class="relative h-48 bg-slate-900 group">
+<img src="${p.photos[idx] || FALLBACK_IMG}" alt="${p.title}" class="w-full h-full object-cover" onerror="this.src='${FALLBACK_IMG}'">
+<span class="absolute top-2 left-2 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded backdrop-blur-sm">${p.portal}</span>
+<span class="absolute bottom-2 right-2 ${badgeColor} text-[10px] font-bold px-2 py-1 rounded-md shadow-md flex items-center gap-1" title="Score de oportunidad calculado"><i class="fa-solid fa-bolt"></i> Score: ${oppScore}/100</span>
+<button onclick="toggleVisited(${p.id})" class="absolute top-2 right-2 ${p.visited ? 'bg-emerald-600 text-white' : 'bg-slate-900/70 text-slate-200 hover:bg-slate-900'} text-[11px] font-semibold px-2.5 py-1 rounded-lg backdrop-blur-sm transition flex items-center gap-1">
+<i class="fa-solid ${p.visited ? 'fa-circle-check' : 'fa-circle'} text-[10px]"></i><span>${p.visited ? 'Visitado' : 'Pendiente'}</span>
+</button>
+${p.photos.length > 1 ? `
+<button onclick="prevPhoto(${p.id}, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 transition"><i class="fa-solid fa-chevron-left"></i></button>
+<button onclick="nextPhoto(${p.id}, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 transition"><i class="fa-solid fa-chevron-right"></i></button>
+<div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/70 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">${idx + 1} / ${p.photos.length}</div>` : ''}
+</div>
+
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start gap-2">
+<div>
+<h3 class="font-bold text-slate-800 text-sm leading-snug line-clamp-2">${p.title}</h3>
+<p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-location-dot text-slate-400"></i> ${p.address}</p>
+</div>
+<button onclick="openEditModal(${p.id})" title="Editar Departamento" class="text-slate-400 hover:text-ocean-600 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+</div>
+
+<div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 grid grid-cols-2 gap-2 text-center">
+<div><span class="text-[10px] uppercase font-semibold text-slate-400 block">Precio Total</span><span class="font-bold text-slate-800 text-base">USD ${p.price.toLocaleString()}</span></div>
+<div class="border-l border-slate-200 pl-2"><span class="text-[10px] uppercase font-semibold text-slate-400 block">Valor por m²</span><span class="font-bold text-ocean-600 text-base">USD ${pricePerM2.toLocaleString()}</span></div>
+</div>
+
+<div class="flex items-center justify-between text-xs text-slate-600 px-1 pt-1 border-b border-slate-100 pb-2">
+<span><i class="fa-solid fa-ruler-combined text-slate-400 mr-1"></i> ${p.m2} m² cubiertos</span>
+<span><i class="fa-solid fa-door-open text-slate-400 mr-1"></i> ${p.rooms} amb</span>
+<span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium text-slate-600">${p.zone}</span>
+</div>
+
+<div class="flex items-center justify-between text-xs">
+<span class="text-slate-500 font-medium">Calificación:</span>
+<div class="flex space-x-1 text-amber-400">
+${[1, 2, 3, 4, 5].map(s => `<button onclick="setRating(${p.id}, ${s})" class="focus:outline-none hover:scale-110 transition"><i class="${s <= (p.rating || 0) ? 'fa-solid' : 'fa-regular'} fa-star"></i></button>`).join('')}
+</div>
+</div>
+
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between text-xs">
+<span class="font-semibold text-slate-700">Pros / Contras</span>
+<button onclick="openProConModal(${p.id})" class="text-ocean-600 hover:underline text-[11px]">Editar</button>
+</div>
+<ul class="text-[11px] space-y-1">
+${(p.pros || []).map(x => `<li class="text-emerald-700 flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-500 mt-0.5"></i> <span>${x}</span></li>`).join('')}
+${(p.cons || []).map(x => `<li class="text-rose-700 flex items-start gap-1.5"><i class="fa-solid fa-xmark text-rose-500 mt-0.5"></i> <span>${x}</span></li>`).join('')}
+</ul>
+</div>
+
+<div class="pt-2">
+<label class="block text-[11px] font-semibold text-slate-500 mb-1">Notas personales:</label>
+<textarea onblur="updateNote(${p.id}, this.value)" placeholder="Escribe impresiones o detalles de la visita..." class="w-full text-xs p-2 border border-slate-200 rounded-lg focus:ring-1 focus:ring-ocean-500 focus:outline-none bg-slate-50/50 resize-none" rows="2">${p.notes || ''}</textarea>
+</div>
+</div>
+</div>
+
+<div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+<a href="${p.url}" target="_blank" class="text-ocean-600 hover:text-ocean-700 font-semibold flex items-center gap-1.5"><i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Ver en ${p.portal}</a>
+<button onclick="deleteProperty(${p.id})" class="text-slate-400 hover:text-rose-600 transition" title="Eliminar departamento"><i class="fa-solid fa-trash-can"></i></button>
+</div>`;
+        container.appendChild(card);
+    });
+}
+
+function prevPhoto(id, e) {
+    e.stopPropagation();
+    const prop = window.properties.find(p => p.id === id);
+    if (!prop) return;
+    photoIndexes[id] = photoIndexes[id] > 0 ? photoIndexes[id] - 1 : prop.photos.length - 1;
+    renderCards();
+}
+function nextPhoto(id, e) {
+    e.stopPropagation();
+    const prop = window.properties.find(p => p.id === id);
+    if (!prop) return;
+    photoIndexes[id] = photoIndexes[id] < prop.photos.length - 1 ? photoIndexes[id] + 1 : 0;
+    renderCards();
+}
+
+function toggleVisited(id) {
+    const prop = window.properties.find(p => p.id === id);
+    if (prop) { prop.visited = !prop.visited; triggerDataChange(); }
+}
+function setRating(id, rating) {
+    const prop = window.properties.find(p => p.id === id);
+    if (prop) { prop.rating = rating; triggerDataChange(); }
+}
+function updateNote(id, note) {
+    const prop = window.properties.find(p => p.id === id);
+    if (prop && prop.notes !== note) { prop.notes = note; triggerDataChange(); }
+}
+function deleteProperty(id) {
+    if (confirm("¿Estás seguro de que deseas eliminar este departamento?")) {
+        window.properties = window.properties.filter(p => p.id !== id);
+        triggerDataChange();
+    }
+}
+
+function getFilteredProperties() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const visitedFilter = document.getElementById('filter-visited').value;
+    const zoneFilter = document.getElementById('filter-zone').value;
+    const maxPriceFilter = document.getElementById('filter-max-price').value;
+    const sortBy = document.getElementById('sort-by').value;
+
+    return window.properties.filter(p => {
+        const matchesSearch = p.title.toLowerCase().includes(search) || p.address.toLowerCase().includes(search) || p.portal.toLowerCase().includes(search);
+        let matchesVisited = true;
+        if (visitedFilter === 'visited') matchesVisited = p.visited;
+        if (visitedFilter === 'pending') matchesVisited = !p.visited;
+        const matchesZone = zoneFilter === 'all' || p.zone === zoneFilter;
+        const matchesPrice = maxPriceFilter === 'all' || p.price <= parseFloat(maxPriceFilter);
+        return matchesSearch && matchesVisited && matchesZone && matchesPrice;
+    }).sort((a, b) => {
+        if (sortBy === 'm2-asc') return (a.price / a.m2) - (b.price / b.m2);
+        if (sortBy === 'm2-desc') return (b.price / b.m2) - (a.price / a.m2);
+        if (sortBy === 'price-asc') return a.price - b.price;
+        if (sortBy === 'price-desc') return b.price - a.price;
+        if (sortBy === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
+        return a.id - b.id;
+    });
+}
+function applyFilters() { renderCards(); }
+
+function switchTab(tab) {
+    const off = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
+    const on = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
+    ['cards', 'map', 'photos'].forEach(t => {
+        document.getElementById('view-' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('tab-' + t + '-btn').className = t === tab ? on : off;
+    });
+    if (tab === 'map') setTimeout(initMapAndChart, 100);
+    if (tab === 'photos') renderPhotosView();
+}
+
+function initMapAndChart() {
+    if (!map) {
+        map = L.map('map').setView([-38.2735, -57.8360], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    }
+    map.invalidateSize();
+    updateMapMarkers();
+    updateChart();
+}
+
+function updateMapMarkers() {
+    if (!map) return;
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    window.properties.forEach(p => {
+        if (!p.coords) return;
+        const pricePerM2 = Math.round(p.price / p.m2);
+        const marker = L.marker(p.coords).addTo(map);
+        marker.bindPopup(`<div class="text-xs p-1"><strong class="font-bold block text-slate-800">${p.title}</strong><p class="text-slate-500 mb-1">${p.address}</p><div class="font-semibold text-ocean-600">USD ${p.price.toLocaleString()} (${p.m2} m²)</div><div class="text-[11px] text-slate-600 font-bold">USD ${pricePerM2}/m²</div></div>`);
+        markers.push(marker);
+    });
+}
+
+function updateChart() {
+    const ctx = document.getElementById('m2Chart');
+    if (!ctx) return;
+    const labels = window.properties.map(p => `Depto #${p.id}`);
+    const dataM2 = window.properties.map(p => Math.round(p.price / p.m2));
+    if (m2ChartInstance) m2ChartInstance.destroy();
+    m2ChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'USD / m²', data: dataM2, backgroundColor: '#0284c7', borderRadius: 6 }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
             }
-            renderCards();
         }
+    });
+}
 
-        // State update handlers
-        function toggleVisited(id) {
-            const prop = window.properties.find(p => p.id === id);
-            if (prop) {
-                prop.visited = !prop.visited;
-                triggerDataChange();
-            }
-        }
+function openEditModal(id) {
+    const isNew = id === null;
+    document.getElementById('edit-modal-title').innerHTML = isNew
+        ? `<i class="fa-solid fa-plus text-ocean-600"></i> Agregar Nuevo Departamento`
+        : `<i class="fa-solid fa-pen-to-square text-ocean-600"></i> Editar Departamento #${id}`;
+    document.getElementById('edit-id').value = isNew ? '' : id;
 
-        function setRating(id, rating) {
-            const prop = window.properties.find(p => p.id === id);
-            if (prop) {
-                prop.rating = rating;
-                triggerDataChange();
-            }
-        }
+    if (isNew) {
+        document.getElementById('edit-title').value = "Departamento 2 Ambientes en Miramar";
+        document.getElementById('edit-price').value = 42000;
+        document.getElementById('edit-m2').value = 40;
+        document.getElementById('edit-rooms').value = 2;
+        document.getElementById('edit-zone').value = "Zona 1";
+        document.getElementById('edit-portal').value = "Inmobiliaria";
+        document.getElementById('edit-address').value = "Calle 21, Miramar";
+        document.getElementById('edit-url').value = "https://www.zonaprop.com.ar";
+        document.getElementById('edit-photos').value = FALLBACK_IMG;
+    } else {
+        const prop = window.properties.find(p => p.id === id);
+        if (!prop) return;
+        document.getElementById('edit-title').value = prop.title;
+        document.getElementById('edit-price').value = prop.price;
+        document.getElementById('edit-m2').value = prop.m2;
+        document.getElementById('edit-rooms').value = prop.rooms;
+        document.getElementById('edit-zone').value = prop.zone;
+        document.getElementById('edit-portal').value = prop.portal;
+        document.getElementById('edit-address').value = prop.address;
+        document.getElementById('edit-url').value = prop.url;
+        document.getElementById('edit-photos').value = prop.photos ? prop.photos.join('\n') : '';
+    }
+    calculateM2Preview();
+    document.getElementById('edit-prop-modal').classList.remove('hidden');
+}
 
-        function updateNote(id, note) {
-            const prop = window.properties.find(p => p.id === id);
-            if (prop && prop.notes !== note) {
-                prop.notes = note;
-                triggerDataChange();
-            }
-        }
+function closeEditModal() { document.getElementById('edit-prop-modal').classList.add('hidden'); }
 
-        function deleteProperty(id) {
-            if (confirm("¿Estás seguro de que deseas eliminar este departamento?")) {
-                window.properties = window.properties.filter(p => p.id !== id);
-                triggerDataChange();
-            }
-        }
+function calculateM2Preview() {
+    const price = parseFloat(document.getElementById('edit-price').value) || 0;
+    const m2 = parseFloat(document.getElementById('edit-m2').value) || 1;
+    document.getElementById('calculated-m2-preview').innerText = `USD ${Math.round(price / m2).toLocaleString()} / m²`;
+}
+document.getElementById('edit-price').addEventListener('input', calculateM2Preview);
+document.getElementById('edit-m2').addEventListener('input', calculateM2Preview);
 
-        // Filtering & Sorting
-        function getFilteredProperties() {
-            const search = document.getElementById('search-input').value.toLowerCase();
-            const visitedFilter = document.getElementById('filter-visited').value;
-            const zoneFilter = document.getElementById('filter-zone').value;
-            const maxPriceFilter = document.getElementById('filter-max-price').value;
-            const sortBy = document.getElementById('sort-by').value;
+function savePropertyData(e) {
+    e.preventDefault();
+    const idVal = document.getElementById('edit-id').value;
+    const isNew = idVal === '';
+    const old = isNew ? null : window.properties.find(p => p.id === parseInt(idVal));
+    const photosArr = document.getElementById('edit-photos').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
-            return window.properties.filter(p => {
-                const matchesSearch = p.title.toLowerCase().includes(search) || 
-                                      p.address.toLowerCase().includes(search) || 
-                                      p.portal.toLowerCase().includes(search);
-                
-                let matchesVisited = true;
-                if (visitedFilter === 'visited') matchesVisited = p.visited;
-                if (visitedFilter === 'pending') matchesVisited = !p.visited;
+    const propObj = {
+        id: isNew ? (window.properties.length > 0 ? Math.max(...window.properties.map(p => p.id)) + 1 : 1) : parseInt(idVal),
+        title: document.getElementById('edit-title').value,
+        price: parseFloat(document.getElementById('edit-price').value),
+        m2: parseFloat(document.getElementById('edit-m2').value),
+        rooms: parseInt(document.getElementById('edit-rooms').value),
+        zone: document.getElementById('edit-zone').value,
+        portal: document.getElementById('edit-portal').value,
+        address: document.getElementById('edit-address').value,
+        url: document.getElementById('edit-url').value,
+        photos: photosArr.length > 0 ? photosArr : [FALLBACK_IMG],
+        visited: old ? (old.visited || false) : false,
+        rating: old ? (old.rating || 3) : 3,
+        coords: old ? (old.coords || [-38.2735, -57.8360]) : [-38.2735, -57.8360],
+        pros: old ? (old.pros || []) : ["Buena ubicación"],
+        cons: old ? (old.cons || []) : ["Sin cochera"],
+        notes: old ? (old.notes || "") : ""
+    };
 
-                let matchesZone = true;
-                if (zoneFilter !== 'all') matchesZone = p.zone === zoneFilter;
+    if (isNew) window.properties.push(propObj);
+    else {
+        const i = window.properties.findIndex(p => p.id === parseInt(idVal));
+        if (i !== -1) window.properties[i] = propObj;
+    }
+    closeEditModal();
+    triggerDataChange();
+}
 
-                let matchesPrice = true;
-                if (maxPriceFilter !== 'all') matchesPrice = p.price <= parseFloat(maxPriceFilter);
+function openProConModal(id) {
+    const prop = window.properties.find(p => p.id === id);
+    if (!prop) return;
+    document.getElementById('procon-id').value = id;
+    document.getElementById('pros-input-list').innerHTML = '';
+    (prop.pros || []).forEach(x => addProInput(x));
+    document.getElementById('cons-input-list').innerHTML = '';
+    (prop.cons || []).forEach(x => addConInput(x));
+    document.getElementById('procon-modal').classList.remove('hidden');
+}
+function closeProConModal() { document.getElementById('procon-modal').classList.add('hidden'); }
 
-                return matchesSearch && matchesVisited && matchesZone && matchesPrice;
-            }).sort((a, b) => {
-                if (sortBy === 'm2-asc') return (a.price / a.m2) - (b.price / b.m2);
-                if (sortBy === 'm2-desc') return (b.price / b.m2) - (a.price / a.m2);
-                if (sortBy === 'price-asc') return a.price - b.price;
-                if (sortBy === 'price-desc') return b.price - a.price;
-                if (sortBy === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
-                return a.id - b.id;
-            });
-        }
+function addListInput(listId, cls, ringColor, placeholder, value) {
+    const div = document.createElement('div');
+    div.className = "flex items-center space-x-2";
+    div.innerHTML = `<input type="text" placeholder="${placeholder}" class="${cls} flex-1 p-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-${ringColor}-500 focus:outline-none"><button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>`;
+    div.querySelector('input').value = value || '';
+    document.getElementById(listId).appendChild(div);
+}
+function addProInput(value = '') { addListInput('pros-input-list', 'pro-input', 'emerald', 'Ej. Muy luminoso', value); }
+function addConInput(value = '') { addListInput('cons-input-list', 'con-input', 'rose', 'Ej. Sin ascensor', value); }
 
-        function applyFilters() {
-            renderCards();
-        }
+function saveProCons() {
+    const id = parseInt(document.getElementById('procon-id').value);
+    const prop = window.properties.find(p => p.id === id);
+    if (!prop) return;
+    prop.pros = Array.from(document.querySelectorAll('.pro-input')).map(i => i.value.trim()).filter(v => v);
+    prop.cons = Array.from(document.querySelectorAll('.con-input')).map(i => i.value.trim()).filter(v => v);
+    closeProConModal();
+    triggerDataChange();
+}
 
-        // Navigation Tabs Switcher
-        function switchTab(tab) {
-            document.getElementById('view-cards').classList.add('hidden');
-            document.getElementById('view-map').classList.add('hidden');
-            document.getElementById('view-photos').classList.add('hidden');
-
-            document.getElementById('tab-cards-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
-            document.getElementById('tab-map-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
-            document.getElementById('tab-photos-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
-
-            if (tab === 'cards') {
-                document.getElementById('view-cards').classList.remove('hidden');
-                document.getElementById('tab-cards-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
-            } else if (tab === 'map') {
-                document.getElementById('view-map').classList.remove('hidden');
-                document.getElementById('tab-map-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
-                setTimeout(initMapAndChart, 100);
-            } else if (tab === 'photos') {
-                document.getElementById('view-photos').classList.remove('hidden');
-                document.getElementById('tab-photos-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
-                renderPhotosView();
-            }
-        }
-
-        // Map and Chart Analytics Initializer
-        function initMapAndChart() {
-            if (!map) {
-                map = L.map('map').setView([-38.2735, -57.8360], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-            }
-            updateMapMarkers();
-            updateChart();
-        }
-
-        function updateMapMarkers() {
-            if (!map) return;
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
-
-            window.properties.forEach(p => {
-                const pricePerM2 = Math.round(p.price / p.m2);
-                const marker = L.marker(p.coords).addTo(map);
-                marker.bindPopup(`
-                    <div class="text-xs p-1">
-                        <strong class="font-bold block text-slate-800">${p.title}</strong>
-                        <p class="text-slate-500 mb-1">${p.address}</p>
-                        <div class="font-semibold text-ocean-600">USD ${p.price.toLocaleString()} (${p.m2} m²)</div>
-                        <div class="text-[11px] text-slate-600 font-bold">USD ${pricePerM2}/m²</div>
-                    </div>
-                `);
-                markers.push(marker);
-            });
-        }
-
-        function updateChart() {
-            const ctx = document.getElementById('m2Chart');
-            if (!ctx) return;
-
-            const labels = window.properties.map(p => `Depto #${p.id}`);
-            const dataM2 = window.properties.map(p => Math.round(p.price / p.m2));
-
-            if (m2ChartInstance) {
-                m2ChartInstance.destroy();
-            }
-
-            m2ChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'USD / m²',
-                        data: dataM2,
-                        backgroundColor: '#0284c7',
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: { color: '#f1f5f9' },
-                            ticks: { font: { size: 10 } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 10 } }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Edit Property Modal
-        function openEditModal(id) {
-            const modal = document.getElementById('edit-prop-modal');
-            const isNew = id === null;
-
-            document.getElementById('edit-modal-title').innerHTML = isNew 
-                ? `<i class="fa-solid fa-plus text-ocean-600"></i> Agregar Nuevo Departamento`
-                : `<i class="fa-solid fa-pen-to-square text-ocean-600"></i> Editar Departamento #${id}`;
-
-            document.getElementById('edit-id').value = isNew ? '' : id;
-
-            if (isNew) {
-                document.getElementById('edit-title').value = "Departamento 2 Ambientes en Miramar";
-                document.getElementById('edit-price').value = 42000;
-                document.getElementById('edit-m2').value = 40;
-                document.getElementById('edit-rooms').value = 2;
-                document.getElementById('edit-zone').value = "Zona 1";
-                document.getElementById('edit-portal').value = "Inmobiliaria";
-                document.getElementById('edit-address').value = "Calle 21, Miramar";
-                document.getElementById('edit-url').value = "https://www.zonaprop.com.ar";
-                document.getElementById('edit-photos').value = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80";
-            } else {
-                const prop = window.properties.find(p => p.id === id);
-                if (!prop) return;
-                document.getElementById('edit-title').value = prop.title;
-                document.getElementById('edit-price').value = prop.price;
-                document.getElementById('edit-m2').value = prop.m2;
-                document.getElementById('edit-rooms').value = prop.rooms;
-                document.getElementById('edit-zone').value = prop.zone;
-                document.getElementById('edit-portal').value = prop.portal;
-                document.getElementById('edit-address').value = prop.address;
-                document.getElementById('edit-url').value = prop.url;
-                document.getElementById('edit-photos').value = prop.photos ? prop.photos.join('\n') : '';
-            }
-
-            calculateM2Preview();
-            modal.classList.remove('hidden');
-        }
-
-        function closeEditModal() {
-            document.getElementById('edit-prop-modal').classList.add('hidden');
-        }
-
-        function calculateM2Preview() {
-            const price = parseFloat(document.getElementById('edit-price').value) || 0;
-            const m2 = parseFloat(document.getElementById('edit-m2').value) || 1;
-            const res = Math.round(price / m2);
-            document.getElementById('calculated-m2-preview').innerText = `USD ${res.toLocaleString()} / m²`;
-        }
-
-        function savePropertyData(e) {
-            e.preventDefault();
-            const idVal = document.getElementById('edit-id').value;
-            const isNew = idVal === '';
-
-            const photosText = document.getElementById('edit-photos').value;
-            const photosArr = photosText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-
-            const propObj = {
-                id: isNew ? (window.properties.length > 0 ? Math.max(...window.properties.map(p => p.id)) + 1 : 1) : parseInt(idVal),
-                title: document.getElementById('edit-title').value,
-                price: parseFloat(document.getElementById('edit-price').value),
-                m2: parseFloat(document.getElementById('edit-m2').value),
-                rooms: parseInt(document.getElementById('edit-rooms').value),
-                zone: document.getElementById('edit-zone').value,
-                portal: document.getElementById('edit-portal').value,
-                address: document.getElementById('edit-address').value,
-                url: document.getElementById('edit-url').value,
-                photos: photosArr.length > 0 ? photosArr : ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"],
-                visited: isNew ? false : (window.properties.find(p => p.id === parseInt(idVal))?.visited || false),
-                rating: isNew ? 3 : (window.properties.find(p => p.id === parseInt(idVal))?.rating || 3),
-                coords: isNew ? [-38.2735, -57.8360] : (window.properties.find(p => p.id === parseInt(idVal))?.coords || [-38.2735, -57.8360]),
-                pros: isNew ? ["Buena ubicación"] : (window.properties.find(p => p.id === parseInt(idVal))?.pros || []),
-                cons: isNew ? ["Sin cochera"] : (window.properties.find(p => p.id === parseInt(idVal))?.cons || []),
-                notes: isNew ? "" : (window.properties.find(p => p.id === parseInt(idVal))?.notes || "")
-            };
-
-            if (isNew) {
-                window.properties.push(propObj);
-            } else {
-                const idx = window.properties.findIndex(p => p.id === parseInt(idVal));
-                if (idx !== -1) window.properties[idx] = propObj;
-            }
-
-            closeEditModal();
-            triggerDataChange();
-        }
-
-        // Pros & Cons Modal
-        function openProConModal(id) {
-            const prop = window.properties.find(p => p.id === id);
-            if (!prop) return;
-
-            document.getElementById('procon-id').value = id;
-            
-            const prosContainer = document.getElementById('pros-input-list');
-            prosContainer.innerHTML = '';
-            if (prop.pros) prop.pros.forEach(pro => addProInput(pro));
-
-            const consContainer = document.getElementById('cons-input-list');
-            consContainer.innerHTML = '';
-            if (prop.cons) prop.cons.forEach(con => addConInput(con));
-
-            document.getElementById('procon-modal').classList.remove('hidden');
-        }
-
-        function closeProConModal() {
-            document.getElementById('procon-modal').classList.add('hidden');
-        }
-
-        function addProInput(value = '') {
-            const div = document.createElement('div');
-            div.className = "flex items-center space-x-2";
-            div.innerHTML = `
-                <input type="text" value="${value}" placeholder="Ej. Muy luminoso" class="pro-input flex-1 p-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none">
-                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
-            `;
-            document.getElementById('pros-input-list').appendChild(div);
-        }
-
-        function addConInput(value = '') {
-            const div = document.createElement('div');
-            div.className = "flex items-center space-x-2";
-            div.innerHTML = `
-                <input type="text" value="${value}" placeholder="Ej. Sin ascensor" class="con-input flex-1 p-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-rose-500 focus:outline-none">
-                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
-            `;
-            document.getElementById('cons-input-list').appendChild(div);
-        }
-
-        function saveProCons() {
-            const id = parseInt(document.getElementById('procon-id').value);
-            const prop = window.properties.find(p => p.id === id);
-            if (!prop) return;
-
-            const pros = Array.from(document.querySelectorAll('.pro-input')).map(i => i.value.trim()).filter(v => v.length > 0);
-            const cons = Array.from(document.querySelectorAll('.con-input')).map(i => i.value.trim()).filter(v => v.length > 0);
-
-            prop.pros = pros;
-            prop.cons = cons;
-
-            closeProConModal();
-            triggerDataChange();
-        }
-
-        // Render Photo Gallery & Links View
-        function renderPhotosView() {
-            const container = document.getElementById('photos-links-container');
-            if (!container) return;
-            container.innerHTML = '';
-
-            window.properties.forEach(p => {
-                const item = document.createElement('div');
-                item.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3";
-
-                item.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-sm">${p.title}</h3>
-                            <p class="text-xs text-slate-500">${p.address} | ${p.portal}</p>
-                        </div>
-                        <a href="${p.url}" target="_blank" class="bg-ocean-600 hover:bg-ocean-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver aviso original
-                        </a>
-                    </div>
-
-                    <!-- Photo grid -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
-                        ${p.photos ? p.photos.map(photo => `
-                            <div class="h-32 rounded-lg overflow-hidden border border-slate-200 bg-slate-200">
-                                <img src="${photo}" alt="Foto propiedad" class="w-full h-full object-cover hover:scale-105 transition duration-300" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80'">
-                            </div>
-                        `).join('') : ''}
-                    </div>
-                `;
-
-                container.appendChild(item);
-            });
-        }
-    </script>
+function renderPhotosView() {
+    const container = document.getElementById('photos-links-container');
+    if (!container) return;
+    container.innerHTML = '';
+    window.properties.forEach(p => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3";
+        item.innerHTML = `
+<div class="flex items-center justify-between">
+<div><h3 class="font-bold text-slate-800 text-sm">${p.title}</h3><p class="text-xs text-slate-500">${p.address} | ${p.portal}</p></div>
+<a href="${p.url}" target="_blank" class="bg-ocean-600 hover:bg-ocean-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver aviso original</a>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+${(p.photos || []).map(photo => `<div class="h-32 rounded-lg overflow-hidden border border-slate-200 bg-slate-200"><img src="${photo}" alt="Foto propiedad" class="w-full h-full object-cover hover:scale-105 transition duration-300" onerror="this.src='${FALLBACK_IMG}'"></div>`).join('')}
+</div>`;
+        container.appendChild(item);
+    });
+}
+</script>
 </body>
 </html>
