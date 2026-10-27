@@ -34,7 +34,7 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
 
 <div id="cloud-status" class="bg-slate-800 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5" title="Estado de sincronización">
 <i class="fa-solid fa-cloud-arrow-up text-sky-400"></i>
-<span class="hidden xl:inline text-[11px]" id="cloud-status-text">Conectando...</span>
+<span class="text-[11px]" id="cloud-status-text">Conectando...</span>
 </div>
 
 <button onclick="refreshApp()" title="Actualizar datos" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm active:scale-95">
@@ -269,7 +269,7 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
             setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up');
         } catch (err) {
             console.warn('Sync pull error', err);
-            setStatus('Sin conexión', 'text-amber-400', 'fa-cloud');
+            setStatus('Sin conexión: ' + err.message, 'text-amber-400', 'fa-cloud');
         }
     };
 
@@ -288,7 +288,7 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
                 setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up');
             } catch (err) {
                 console.warn('Sync push error', err);
-                setStatus('Error Sync', 'text-rose-400', 'fa-cloud-xmark');
+                setStatus('Error Sync: ' + err.message, 'text-rose-400', 'fa-cloud-xmark');
             } finally { pushing = false; }
         }, 500);
     };
