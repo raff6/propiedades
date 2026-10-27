@@ -214,13 +214,13 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
 </div>
 </div>
 
-<!-- CLOUD SYNC (JSONBlob, sin cuenta) -->
+<!-- CLOUD SYNC (KVdb) -->
 <script>
 (function () {
-    const API = 'https://jsonblob.com/api/jsonBlob';
-    const SHARED_BLOB_ID = '01a17edc-c706-7ccd-9c0e-85957bfb644c';
-    const HEADERS = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-    let blobId = null, remoteStamp = 0, pushTimer = null, pushing = false;
+    const BUCKET = 'F4vhP5G2R7Fk6rxpzrvppt';
+    const KEY = 'deptos';
+    const URL_KV = `https://kvdb.io/${BUCKET}/${KEY}`;
+    let remoteStamp = 0, pushTimer = null, pushing = false;
 
     function setStatus(text, color, icon) {
         const el = document.getElementById('cloud-status');
@@ -231,11 +231,6 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
         el.querySelector('i').className = `fa-solid ${icon} ${color}`;
     }
     function payload(stamp) { return JSON.stringify({ items: window.properties, updatedAt: stamp }); }
-    function adoptId(id) {
-        blobId = id;
-        try { localStorage.setItem('miramar_blob_id', id); } catch (e) {}
-        history.replaceState(null, '', '#blob=' + id);
-    }
     function userIsEditing() {
         const a = document.activeElement;
         const typing = a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT');
@@ -245,11 +240,18 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
     }
 
     window.pullFromCloud = async function (force) {
-        if (!blobId || pushTimer || pushing) return;
+        if (pushTimer || pushing) return;
         try {
-            const r = await fetch(`${API}/${blobId}`, { headers: HEADERS, cache: 'no-store' });
-            if (!r.ok) throw new Error('GET ' + r.status);
-            const data = await r.json();
+            const r = await fetch(URL_KV, { cache: 'no-store' });
+            let data = null;
+            if (r.status === 404) {
+                data = null; // todavía no hay datos en la nube
+            } else if (!r.ok) {
+                throw new Error('GET ' + r.status);
+            } else {
+                const txt = await r.text();
+                try { data = JSON.parse(txt); } catch (e) { data = null; }
+            }
 
             // Nube vacía: subir los datos locales la primera vez
             if (!data || !Array.isArray(data.items) || data.items.length === 0) {
@@ -274,7 +276,6 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
     };
 
     window.syncToCloud = function () {
-        if (!blobId) return;
         clearTimeout(pushTimer);
         setStatus('Guardando...', 'text-amber-400', 'fa-arrows-rotate animate-spin');
         pushTimer = setTimeout(async () => {
@@ -282,8 +283,8 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
             pushing = true;
             const stamp = Date.now();
             try {
-                const r = await fetch(`${API}/${blobId}`, { method: 'PUT', headers: HEADERS, body: payload(stamp) });
-                if (!r.ok) throw new Error('PUT ' + r.status);
+                const r = await fetch(URL_KV, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload(stamp) });
+                if (!r.ok) throw new Error('POST ' + r.status);
                 remoteStamp = stamp;
                 setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up');
             } catch (err) {
@@ -299,11 +300,6 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
     };
 
     async function startSync() {
-        if (!SHARED_BLOB_ID || SHARED_BLOB_ID === 'PEGA_AQUI_TU_ID') {
-            setStatus('Falta ID', 'text-rose-400', 'fa-cloud-xmark');
-            return;
-        }
-        adoptId(SHARED_BLOB_ID);
         await window.pullFromCloud(true);
         setInterval(() => window.pullFromCloud(false), 5000);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) window.pullFromCloud(false); });
