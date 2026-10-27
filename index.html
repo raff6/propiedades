@@ -16,6 +16,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -27,40 +28,33 @@
                         ocean: {
                             50: '#f0f9ff',
                             100: '#e0f2fe',
-                            500: '#06b6d4',
+                            500: '#0ea5e9',
                             600: '#0284c7',
                             700: '#0369a1',
-                            800: '#075985',
+                            900: '#0c4a6e',
                         }
                     }
                 }
             }
         }
     </script>
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        #map { height: 400px; width: 100%; border-radius: 0.75rem; z-index: 10; }
-        .property-card { transition: all 0.25s ease-in-out; }
-        .property-card:hover { transform: translateY(-3px); }
-    </style>
 </head>
-<body class="h-full flex flex-col font-sans text-slate-800 bg-slate-100 antialiased">
+<body class="h-full font-sans text-slate-800 flex flex-col">
 
-    <!-- Header Navigation -->
-    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2 bg-ocean-600 rounded-lg text-white">
-                        <i class="fa-solid fa-building-user text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-lg leading-tight">Miramar Deptos 2026</h1>
-                        <p class="text-xs text-slate-400">Evaluación y Comparativa de Propiedades</p>
-                    </div>
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-ocean-600 p-2 rounded-xl text-white">
+                    <i class="fa-solid fa-building text-xl"></i>
                 </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Comparador Miramar</h1>
+                    <p class="text-xs text-slate-400">Departamentos 2 Ambientes en Venta</p>
+                </div>
+            </div>
 
+            <div class="flex items-center space-x-3">
                 <!-- Stats summary badges -->
                 <div class="hidden md:flex items-center space-x-4 text-xs">
                     <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
@@ -72,1321 +66,1360 @@
                         <span class="font-semibold text-emerald-400 text-sm" id="stat-visited">0 / 14</span>
                     </div>
                     <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                        <span class="text-slate-400 block">Prom. USD/m²:</span>
-                        <span class="font-semibold text-amber-400 text-sm" id="stat-avg-m2">USD 1,120</span>
+                        <span class="text-slate-400 block">Promedio USD/m²:</span>
+                        <span class="font-semibold text-amber-400 text-sm" id="stat-avg-m2">USD 1,080</span>
                     </div>
                 </div>
 
-                <!-- Toggle View Mode -->
-                <div class="flex space-x-2">
-                    <button onclick="switchTab('cards')" id="tab-cards-btn" class="px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition">
-                        <i class="fa-solid fa-th-large mr-1"></i> Listado
-                    </button>
-                    <button onclick="switchTab('map')" id="tab-map-btn" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition">
-                        <i class="fa-solid fa-map-location-dot mr-1"></i> Mapa y Análisis
-                    </button>
-                    <button onclick="switchTab('photos')" id="tab-photos-btn" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition">
-                        <i class="fa-solid fa-images mr-1"></i> Fotos y Enlaces
-                    </button>
+                <!-- Cloud Sync Status Badge -->
+                <div id="cloud-status" class="bg-slate-800 text-emerald-400 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5" title="Sincronización en la nube activa">
+                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400 animate-pulse"></i>
+                    <span class="hidden xl:inline text-[11px]" id="cloud-status-text">Sincronizado</span>
                 </div>
+
+                <!-- Botón de Actualizar Página / Refrescar Datos -->
+                <button onclick="refreshApp()" title="Actualizar datos y refrescar la vista" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+                    <span class="hidden sm:inline">Actualizar Página</span>
+                </button>
+
+                <!-- Sync JSON Controls -->
+                <button onclick="exportJSON()" title="Descargar respaldo data.json" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> <span class="hidden lg:inline">Exportar</span>
+                </button>
+                <label title="Cargar data.json desde tu dispositivo" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-upload"></i> <span class="hidden lg:inline">Importar</span>
+                    <input type="file" id="import-json-file" accept=".json" onchange="importJSON(event)" class="hidden">
+                </label>
+
+                <button onclick="openEditModal(null)" class="bg-ocean-600 hover:bg-ocean-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Nuevo Depto</span>
+                </button>
+
+                <button onclick="resetData()" title="Restablecer datos originales" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition">
+                    <i class="fa-solid fa-rotate-right text-xs"></i>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
+    <!-- Sub-Header View Switcher Tabs -->
+    <div class="bg-slate-900 border-b border-slate-800 overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 py-2 min-w-max">
+            <button id="tab-cards-btn" onclick="switchTab('cards')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition">
+                <i class="fa-solid fa-grid-2 mr-1"></i> Tarjetas y Comparativa
+            </button>
+            <button id="tab-map-btn" onclick="switchTab('map')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition">
+                <i class="fa-solid fa-map-location-dot mr-1"></i> Mapa y Análisis USD/m²
+            </button>
+            <button id="tab-photos-btn" onclick="switchTab('photos')" class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition">
+                <i class="fa-solid fa-images mr-1"></i> Galería de Fotos y Links
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        <!-- Controls / Filters Bar -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-            <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center flex-1">
+        <!-- VIEW 1: Cards Grid -->
+        <div id="view-cards" class="space-y-6">
+            
+            <!-- Filters & Controls Bar -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
                 <!-- Search Input -->
-                <div class="relative min-w-[200px] flex-1">
-                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
-                    <input type="text" id="search-input" oninput="applyFilters()" placeholder="Buscar por portal, zona, ref..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                <div class="relative flex-1 min-w-[200px]">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="search-input" onkeyup="applyFilters()" placeholder="Buscar por título, zona o portal..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
                 </div>
 
-                <!-- Filter Visited -->
-                <select id="filter-visited" onchange="applyFilters()" class="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    <option value="all">Todos los estados</option>
-                    <option value="visited">Solo Visitados</option>
-                    <option value="pending">Pendientes de Visitar</option>
-                </select>
+                <!-- Visited Filter -->
+                <div class="flex items-center space-x-1.5 text-xs">
+                    <label class="text-slate-500 font-medium">Estado:</label>
+                    <select id="filter-visited" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                        <option value="all">Todos</option>
+                        <option value="visited">Solo Visitados</option>
+                        <option value="pending">Pendientes de visita</option>
+                    </select>
+                </div>
 
-                <!-- Filter Zone -->
-                <select id="filter-zone" onchange="applyFilters()" class="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    <option value="all">Todas las Zonas</option>
-                    <option value="Zona 1">Zona 1 (Centro/Costanera)</option>
-                    <option value="Zona 4">Zona 4</option>
-                    <option value="Otras">Otras Zonas</option>
-                </select>
+                <!-- Zone Filter -->
+                <div class="flex items-center space-x-1.5 text-xs">
+                    <label class="text-slate-500 font-medium">Zona:</label>
+                    <select id="filter-zone" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                        <option value="all">Todas las zonas</option>
+                        <option value="Zona 1">Zona 1 / Centro</option>
+                        <option value="Zona I">Zona I</option>
+                        <option value="Zona 4">Zona 4</option>
+                    </select>
+                </div>
 
-                <!-- Sort options -->
-                <select id="sort-by" onchange="applyFilters()" class="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                    <option value="default">Ordenar por: Defecto</option>
-                    <option value="m2-asc">Precio/m² (Menor a Mayor)</option>
-                    <option value="m2-desc">Precio/m² (Mayor a Menor)</option>
-                    <option value="price-asc">Precio Total (Menor a Mayor)</option>
-                    <option value="price-desc">Precio Total (Mayor a Menor)</option>
-                    <option value="rating-desc">Mejor Valorados</option>
-                </select>
+                <!-- Price Max Filter -->
+                <div class="flex items-center space-x-1.5 text-xs">
+                    <label class="text-slate-500 font-medium">Precio Máx:</label>
+                    <select id="filter-max-price" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                        <option value="all">Sin límite</option>
+                        <option value="40000">Hasta USD 40.000</option>
+                        <option value="45000">Hasta USD 45.000</option>
+                        <option value="50000">Hasta USD 50.000</option>
+                    </select>
+                </div>
+
+                <!-- Sort By -->
+                <div class="flex items-center space-x-1.5 text-xs">
+                    <label class="text-slate-500 font-medium">Ordenar:</label>
+                    <select id="sort-by" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                        <option value="default">Por Defecto</option>
+                        <option value="m2-asc">USD/m²: Menor a Mayor</option>
+                        <option value="m2-desc">USD/m²: Mayor a Menor</option>
+                        <option value="price-asc">Precio: Menor a Mayor</option>
+                        <option value="price-desc">Precio: Mayor a Menor</option>
+                        <option value="rating-desc">Mejor Calificados</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Add & Reset Buttons -->
-            <div class="flex items-center space-x-2">
-                <button onclick="openEditModal(null)" class="flex-1 md:flex-initial bg-ocean-600 hover:bg-ocean-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-plus"></i> Nuevo Depto
-                </button>
-                <button onclick="resetData()" title="Restablecer datos guardados" class="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-100 rounded-lg transition shrink-0">
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button>
+            <!-- Property Cards Grid -->
+            <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated via JS -->
             </div>
         </div>
 
-        <!-- VIEW 1: Cards View -->
-        <div id="view-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Property Cards will be dynamic here -->
-        </div>
-
-        <!-- VIEW 2: Map & Analytics View -->
+        <!-- VIEW 2: Map & Analytics -->
         <div id="view-map" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Map Container -->
-                <div class="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-map-marked-alt text-ocean-600"></i> Ubicación Geográfica en Miramar
-                        </h2>
-                        <span class="text-xs text-slate-500"><i class="fa-solid fa-circle-info mr-1"></i>Haz clic en un marcador para ver la propiedad</span>
+                <!-- Leaflet Map Container -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[550px]">
+                    <div class="p-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <span class="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-map-pin text-ocean-600"></i> Ubicación Geográfica en Miramar
+                        </span>
+                        <span class="text-[11px] text-slate-500">Haz clic en los marcadores para ver el precio/m²</span>
                     </div>
-                    <div id="map"></div>
+                    <div id="map" class="flex-1 w-full h-full z-10"></div>
                 </div>
 
-                <!-- Analytics Summary Chart -->
+                <!-- USD / m2 Bar Chart -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
-                        <h2 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-bar text-ocean-600"></i> Comparativa USD / m²
-                        </h2>
-                        <p class="text-xs text-slate-500 mb-4">Relación de precio por metro cuadrado útil de cada alternativa en el mercado de Miramar.</p>
-                        <div class="h-64 relative">
+                        <h3 class="font-bold text-sm text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-ocean-600"></i> Comparativa USD / m²
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Relación de precio por metro cuadrado útil</p>
+                        <div class="h-[400px] relative">
                             <canvas id="m2Chart"></canvas>
                         </div>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> El promedio en Miramar para 2 ambientes ronda los <strong>USD 1,100 / m²</strong>.
+                    <div class="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-600">
+                        <i class="fa-solid fa-circle-info text-ocean-600 mr-1"></i> El promedio del mercado local para esta selección es de <strong>USD <span id="chart-avg">1,080</span>/m²</strong>.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 3: Photos & Links Gallery -->
+        <!-- VIEW 3: Gallery & Original Links -->
         <div id="view-photos" class="hidden space-y-6">
-            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-images text-ocean-600"></i> Galería General de Fotos y Publicaciones
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                    <i class="fa-solid fa-images text-ocean-600"></i> Galería de Fotos y Enlaces Originales
                 </h2>
-                <p class="text-sm text-slate-500 mb-6">
-                    A continuación se listan las imágenes precargadas y los enlaces directos a las publicaciones originales de cada departamento.
-                </p>
+                <p class="text-xs text-slate-500 mb-6">Explora las publicaciones e imágenes ingresadas de los departamentos seleccionados.</p>
 
-                <div id="photos-gallery-container" class="space-y-8">
-                    <!-- Dynamic rendering of property photo galleries -->
+                <div id="photos-links-container" class="space-y-6">
+                    <!-- Populated via JS -->
                 </div>
             </div>
         </div>
 
     </main>
 
-    <!-- Modal for Full Property Editing (Title, Price, m2, Rooms, Zone, Address) -->
-    <div id="edit-property-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto">
-            <div class="bg-slate-900 text-white p-4 flex justify-between items-center shrink-0">
-                <h3 class="font-semibold text-lg flex items-center gap-2" id="edit-modal-title">
-                    <i class="fa-solid fa-pen-to-square text-ocean-400"></i> Editar Departamento
+    <!-- EDIT PROPERTY MODAL -->
+    <div id="edit-prop-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2" id="edit-modal-title">
+                    <i class="fa-solid fa-pen-to-square text-ocean-600"></i> Editar Departamento
                 </h3>
-                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white text-xl">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
             
-            <form onsubmit="savePropertyDetails(event)" class="p-5 overflow-y-auto space-y-4 flex-1 text-sm">
-                <input type="hidden" id="edit-prop-id">
-                
-                <!-- Title & Portal -->
+            <form id="edit-prop-form" onsubmit="savePropertyData(event)" class="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
+                <input type="hidden" id="edit-id">
+
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">Título del Departamento</label>
-                    <input type="text" id="edit-title" required placeholder="Ej: Depto 2 ambientes con cochera" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                    <label class="block font-semibold text-slate-700 mb-1">Título / Publicación</label>
+                    <input type="text" id="edit-title" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">Portal / Origen</label>
-                        <input type="text" id="edit-portal" placeholder="Ej: Zonaprop, Argenprop..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                        <label class="block font-semibold text-slate-700 mb-1">Precio (USD)</label>
+                        <input type="number" id="edit-price" required min="1000" step="100" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">Zona / Barrio</label>
-                        <input type="text" id="edit-zone" required placeholder="Ej: Zona 1, Zona 4..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                        <label class="block font-semibold text-slate-700 mb-1">Superficie (m²)</label>
+                        <input type="number" id="edit-m2" required min="10" step="1" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                     </div>
                 </div>
 
-                <!-- Address -->
-                <div>
-                    <label class="block font-medium text-slate-700 mb-1">Dirección / Ubicación</label>
-                    <input type="text" id="edit-address" required placeholder="Ej: Calle 28 entre 21 y 23, Miramar" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                </div>
-
-                <!-- Price, M2 & Ambientes -->
                 <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">Precio (USD)</label>
-                        <input type="number" id="edit-price" min="0" step="100" required oninput="calculateModalM2Preview()" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                        <label class="block font-semibold text-slate-700 mb-1">Ambientes</label>
+                        <input type="number" id="edit-rooms" required min="1" max="10" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">Metros ($m^2$)</label>
-                        <input type="number" id="edit-m2" min="1" step="1" required oninput="calculateModalM2Preview()" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                        <label class="block font-semibold text-slate-700 mb-1">Zona</label>
+                        <input type="text" id="edit-zone" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block font-medium text-slate-700 mb-1">Ambientes</label>
-                        <input type="number" id="edit-rooms" min="1" max="10" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                        <label class="block font-semibold text-slate-700 mb-1">Portal / Inmobiliaria</label>
+                        <input type="text" id="edit-portal" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                     </div>
                 </div>
 
-                <!-- Automatic USD/m2 live calculation info badge -->
-                <div class="bg-ocean-50 border border-ocean-200 rounded-lg p-3 text-ocean-800 text-xs flex justify-between items-center font-medium">
-                    <span><i class="fa-solid fa-calculator mr-1"></i> Valor por $m^2$ calculado:</span>
-                    <span id="modal-m2-preview" class="font-bold text-sm text-ocean-700">USD 0 / $m^2$</span>
-                </div>
-
-                <!-- URL Link -->
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">Enlace a la Publicación original</label>
-                    <input type="url" id="edit-url" placeholder="https://..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                    <label class="block font-semibold text-slate-700 mb-1">Dirección / Ubicación</label>
+                    <input type="text" id="edit-address" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                 </div>
 
-                <div class="pt-3 border-t border-slate-200 flex justify-end gap-2 shrink-0">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium transition">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="bg-ocean-600 hover:bg-ocean-700 text-white px-5 py-2 rounded-lg font-semibold transition shadow-sm">
-                        Guardar Cambios
-                    </button>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Enlace a la publicación original (URL)</label>
+                    <input type="url" id="edit-url" placeholder="https://..." class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">URLs de Fotos (Una por línea)</label>
+                    <textarea id="edit-photos" rows="3" placeholder="https://imagen1.jpg&#10;https://imagen2.jpg" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:outline-none font-mono text-[11px]"></textarea>
+                </div>
+
+                <div class="p-3 bg-ocean-50 border border-ocean-100 rounded-lg flex items-center justify-between">
+                    <span class="text-ocean-900 font-semibold">Valor por m² resultante:</span>
+                    <span id="calculated-m2-preview" class="text-ocean-700 font-bold text-sm">USD 0 / m²</span>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-medium shadow-sm">Guardar Cambios</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal for Managing Pros & Cons -->
-    <div id="procon-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-                <h3 class="font-semibold text-lg flex items-center gap-2" id="modal-title">
-                    <i class="fa-solid fa-list-check text-ocean-400"></i> Pros & Contras
+    <!-- PROS & CONS MODAL -->
+    <div id="procon-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-ocean-600"></i> Editar Ventajas y Desventajas
                 </h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="closeProConModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
             
-            <div class="p-5 overflow-y-auto space-y-6 flex-1">
-                <!-- PROS SECTION -->
+            <div class="p-4 space-y-4 text-xs">
+                <input type="hidden" id="procon-id">
+
+                <!-- Pros list editor -->
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2 flex items-center gap-1">
-                        <i class="fa-solid fa-thumbs-up"></i> Puntos a Favor (Pros)
+                    <label class="block font-semibold text-emerald-700 mb-1 flex items-center justify-between">
+                        <span><i class="fa-solid fa-thumbs-up mr-1"></i> Ventajas (Pros)</span>
+                        <button onclick="addProInput()" class="text-emerald-600 hover:underline font-normal text-[11px]">+ Agregar</button>
                     </label>
-                    <div id="modal-pros-list" class="space-y-2 mb-3">
-                        <!-- Dynamic Pros -->
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="new-pro-input" placeholder="Ej: Balcón con vista lateral al mar" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                        <button onclick="addPro()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
+                    <div id="pros-input-list" class="space-y-1.5"></div>
                 </div>
 
-                <!-- CONS SECTION -->
+                <!-- Cons list editor -->
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-rose-700 mb-2 flex items-center gap-1">
-                        <i class="fa-solid fa-thumbs-down"></i> Puntos en Contra (Contras)
+                    <label class="block font-semibold text-rose-700 mb-1 flex items-center justify-between">
+                        <span><i class="fa-solid fa-thumbs-down mr-1"></i> Desventajas (Contras)</span>
+                        <button onclick="addConInput()" class="text-rose-600 hover:underline font-normal text-[11px]">+ Agregar</button>
                     </label>
-                    <div id="modal-cons-list" class="space-y-2 mb-3">
-                        <!-- Dynamic Cons -->
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="new-con-input" placeholder="Ej: Edificio sin ascensor / expensas altas" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-rose-500 focus:outline-none">
-                        <button onclick="addCon()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
+                    <div id="cons-input-list" class="space-y-1.5"></div>
                 </div>
 
-                <!-- PERSONAL NOTES -->
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center gap-1">
-                        <i class="fa-solid fa-note-sticky text-amber-500"></i> Notas e Impresiones de Visita
-                    </label>
-                    <textarea id="modal-notes-input" rows="3" placeholder="Anotaciones de la inmobiliaria, observaciones de humedad, luminosidad, etc..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-ocean-500 focus:outline-none"></textarea>
+                <div class="pt-2 flex justify-end space-x-2 border-t border-slate-100">
+                    <button type="button" onclick="closeProConModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium">Cancelar</button>
+                    <button type="button" onclick="saveProCons()" class="px-4 py-1.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-medium shadow-sm">Guardar Lista</button>
                 </div>
-            </div>
-
-            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button onclick="saveModalChanges()" class="bg-ocean-600 hover:bg-ocean-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-sm">
-                    Guardar Cambios
-                </button>
             </div>
         </div>
-    </div>
-
-    <!-- Modal for Managing Photos Links -->
-    <div id="photo-manage-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-                <h3 class="font-semibold text-lg flex items-center gap-2" id="photo-modal-title">
-                    <i class="fa-solid fa-image text-ocean-400"></i> Administrar Fotos
-                </h3>
-                <button onclick="closePhotoModal()" class="text-slate-400 hover:text-white text-xl">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <div class="p-5 overflow-y-auto space-y-4 flex-1">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        Enlaces de Imágenes (URL)
-                    </label>
-                    <p class="text-xs text-slate-500 mb-3">Agrega o elimina links directos de fotos para este departamento:</p>
-                    <div id="photo-urls-list" class="space-y-2 mb-3">
-                        <!-- Dynamic list of image URLs -->
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="url" id="new-photo-url-input" placeholder="https://ejemplo.com/foto.jpg" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean-500 focus:outline-none">
-                        <button onclick="addPhotoUrl()" class="bg-ocean-600 hover:bg-ocean-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
-                            <i class="fa-solid fa-plus"></i> Agregar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button onclick="closePhotoModal()" class="bg-slate-800 text-white px-5 py-2 rounded-lg text-sm font-semibold transition">
-                    Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
-        <i class="fa-solid fa-circle-check text-emerald-400 text-lg" id="toast-icon"></i>
-        <span id="toast-msg" class="text-sm font-medium">Información actualizada</span>
     </div>
 
     <!-- Application JavaScript Logic -->
+    <!-- Firebase Script Configuration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration & Storage Setup
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'miramar-deptos-app';
+        let db = null;
+        let auth = null;
+        let user = null;
+        let isCloudSyncing = false;
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config)
+            : { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: "demo-project" };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Authenticate first
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) {
+                    initFirestoreSync();
+                }
+            });
+        } catch (err) {
+            console.warn("Cloud Sync offline, running on local storage mode.", err);
+            updateCloudStatusUI('Offline (Local)', 'text-amber-400', 'fa-cloud');
+        }
+
+        function updateCloudStatusUI(text, colorClass, iconClass) {
+            const statusEl = document.getElementById('cloud-status');
+            const statusText = document.getElementById('cloud-status-text');
+            if (statusEl && statusText) {
+                statusText.innerText = text;
+                statusEl.className = `bg-slate-800 ${colorClass} px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5`;
+                statusEl.querySelector('i').className = `fa-solid ${iconClass} ${colorClass}`;
+            }
+        }
+
+        // Realtime Cloud Listener
+        function initFirestoreSync() {
+            if (!db || !user) return;
+
+            // Public Collection Path according to strict storage rules
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'properties_list', 'main_list');
+
+            updateCloudStatusUI('Sincronizando...', 'text-sky-400', 'fa-cloud-arrow-up animate-pulse');
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    if (cloudData && Array.isArray(cloudData.items)) {
+                        window.properties = cloudData.items;
+                        window.saveLocalData();
+                        window.initUI();
+                        updateCloudStatusUI('Nube Activa', 'text-emerald-400', 'fa-cloud-check');
+                    }
+                } else {
+                    // Document doesn't exist yet, publish current local properties
+                    window.syncToCloud();
+                }
+            }, (error) => {
+                console.error("Cloud listener error:", error);
+                updateCloudStatusUI('Local Only', 'text-amber-400', 'fa-cloud');
+            });
+        }
+
+        // Global Sync Function
+        window.syncToCloud = async function() {
+            if (!db || !user || isCloudSyncing) return;
+            try {
+                isCloudSyncing = true;
+                updateCloudStatusUI('Guardando...', 'text-amber-400', 'fa-arrows-rotate animate-spin');
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'properties_list', 'main_list');
+                await setDoc(docRef, { 
+                    items: window.properties, 
+                    updatedAt: new Date().toISOString() 
+                }, { merge: true });
+                updateCloudStatusUI('Nube Activa', 'text-emerald-400', 'fa-cloud-check');
+            } catch (err) {
+                console.error("Error saving to cloud:", err);
+                updateCloudStatusUI('Error Sync', 'text-rose-400', 'fa-cloud-xmark');
+            } finally {
+                isCloudSyncing = false;
+            }
+        };
+    </script>
+
     <script>
-        // Initial Dataset of properties provided
         const INITIAL_PROPERTIES = [
             {
                 id: 1,
-                title: "Depto 2 Ambientes Zona 1",
+                title: "Departamento 2 Ambientes en Venta en Zona 1",
                 portal: "Zonaprop",
-                address: "Calle 15 y Calle 12, Zona 1, Miramar",
+                address: "Calle 21 y 18, Zona 1, Miramar",
                 zone: "Zona 1",
                 price: 45000,
-                m2: 40,
+                m2: 42,
+                rooms: 2,
                 visited: false,
                 rating: 4,
-                coords: [-38.2721, -57.8385],
+                coords: [-38.2721, -57.8352],
                 url: "https://www.zonaprop.com.ar",
                 photos: [
-                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
+                ],
+                pros: ["Excelente ubicación céntrica", "Muy buen estado de conservación", "Luminoso"],
+                cons: ["Edificio sin cochera"],
+                notes: "Consultar expensas mensuales."
+            },
+            {
+                id: 2,
+                title: "Venta de Departamento en Miramar Zona 1",
+                portal: "Zonaprop",
+                address: "Calle 14 e/ 23 y 25, Miramar",
+                zone: "Zona 1",
+                price: 39500,
+                m2: 38,
+                rooms: 2,
+                visited: true,
+                rating: 3,
+                coords: [-38.2745, -57.8368],
+                url: "https://www.zonaprop.com.ar",
+                photos: [
                     "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80",
                     "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Excelente luz natural", "A 2 cuadras de la playa"],
+                pros: ["Precio muy competitivo", "Bajas expensas"],
+                cons: ["Piso alto por escalera", "Requiere pintura"],
+                notes: "Visitado el fin de semana. El baño está reciclado."
+            },
+            {
+                id: 3,
+                title: "Depto 2 Ambientes con Cochera Zona 4",
+                portal: "Zonaprop",
+                address: "Calle 27 y 12, Zona 4, Miramar",
+                zone: "Zona 4",
+                price: 52000,
+                m2: 48,
+                rooms: 2,
+                visited: false,
+                rating: 5,
+                coords: [-38.2789, -57.8420],
+                url: "https://www.zonaprop.com.ar",
+                photos: [
+                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format&fit=crop&q=80"
+                ],
+                pros: ["Incluye cochera cubierta", "Balcón amplio", "Edificio nuevo"],
+                cons: ["Más alejado del centro"],
+                notes: "Acepta permuta de menor valor."
+            },
+            {
+                id: 4,
+                title: "Departamento 2 Ambientes con Balcón Zona 1",
+                portal: "Zonaprop",
+                address: "Calle 19 e/ 20 y 22, Zona 1, Miramar",
+                zone: "Zona 1",
+                price: 48000,
+                m2: 45,
+                rooms: 2,
+                visited: false,
+                rating: 4,
+                coords: [-38.2730, -57.8340],
+                url: "https://www.zonaprop.com.ar",
+                photos: [
+                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format&fit=crop&q=80"
+                ],
+                pros: ["Vista lateral al mar", "Balcón a la calle"],
                 cons: ["Expensas moderadas"],
                 notes: ""
             },
             {
-                id: 2,
-                title: "Venta Departamento en Miramar",
-                portal: "Zonaprop",
-                address: "Calle 21 y Calle 14, Zona 1, Miramar",
-                zone: "Zona 1",
-                price: 48000,
-                m2: 42,
-                visited: false,
-                rating: 3,
-                coords: [-38.2745, -57.8392],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Cocina reciclada", "Buen edificio"],
-                cons: ["Sin balcón a la calle"],
-                notes: ""
-            },
-            {
-                id: 3,
-                title: "Depto 2 Ambientes con Cochera",
-                portal: "Zonaprop",
-                address: "Calle 28 entre 21 y 23, Zona 4, Miramar",
-                zone: "Zona 4",
-                price: 52000,
-                m2: 45,
-                visited: false,
-                rating: 5,
-                coords: [-38.2780, -57.8420],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Incluye Cochera cubierta", "Zona muy tranquila", "Edificio moderno"],
-                cons: ["Más alejado del mar"],
-                notes: ""
-            },
-            {
-                id: 4,
-                title: "Depto 2 Ambientes con Balcón",
-                portal: "Zonaprop",
-                address: "Calle 17 entre 12 y 14, Zona 1, Miramar",
-                zone: "Zona 1",
-                price: 49500,
-                m2: 41,
-                visited: false,
-                rating: 4,
-                coords: [-38.2715, -57.8360],
-                url: "https://www.zonaprop.com.ar",
-                photos: [
-                    "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=600&auto=format&fit=crop&q=80"
-                ],
-                pros: ["Balcón corrido al frente", "Muy luminoso"],
-                cons: ["Baño de época a reciclar"],
-                notes: ""
-            },
-            {
                 id: 5,
-                title: "Departamento Código: 1108",
+                title: "Departamento Zona 1 - Código: 1108",
                 portal: "Olga Alvarez Barrios",
-                address: "Calle 12 y 19, Zona 1, Miramar",
+                address: "Calle 17 e/ 12 y 14, Miramar",
                 zone: "Zona 1",
                 price: 43000,
-                m2: 39,
-                visited: false,
-                rating: 3,
-                coords: [-38.2730, -57.8350],
-                url: "http://www.alvarezbarrios.com.ar",
+                m2: 40,
+                rooms: 2,
+                visited: true,
+                rating: 4,
+                coords: [-38.2710, -57.8320],
+                url: "https://www.olgaalvarezbarrios.com.ar",
                 photos: [
-                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Precio competitivo", "Edificio sólido"],
-                cons: ["Primer piso por escalera"],
-                notes: ""
+                pros: ["Ubicación estratégica", "Cocina separada"],
+                cons: ["Contrafrente"],
+                notes: "Agendar segunda visita."
             },
             {
                 id: 6,
-                title: "Departamento Código: 1090",
+                title: "Departamento Zona 1 - Código: 1090",
                 portal: "Olga Alvarez Barrios",
-                address: "Calle 14 y 23, Zona 1, Miramar",
+                address: "Calle 21 e/ 14 y 16, Miramar",
                 zone: "Zona 1",
                 price: 41000,
-                m2: 37,
+                m2: 39,
+                rooms: 2,
                 visited: false,
-                rating: 2,
-                coords: [-38.2750, -57.8375],
-                url: "http://www.alvarezbarrios.com.ar",
+                rating: 3,
+                coords: [-38.2735, -57.8355],
+                url: "https://www.olgaalvarezbarrios.com.ar",
                 photos: [
-                    "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Buen precio total"],
-                cons: ["Falta pintura general", "Ambientes reducidos"],
+                pros: ["A 2 cuadras de la playa", "Gas natural conectado"],
+                cons: ["Sin balcón"],
                 notes: ""
             },
             {
                 id: 7,
-                title: "Apartamento en Venta Miramar",
+                title: "Apartamento en Venta Miramar Properati",
                 portal: "Properati",
-                address: "Av. Costanera y 27, Miramar",
-                zone: "Zona 1",
-                price: 55000,
-                m2: 44,
+                address: "Av. Costanera y Calle 29, Miramar",
+                zone: "Zona I",
+                price: 46000,
+                m2: 41,
+                rooms: 2,
                 visited: false,
-                rating: 5,
-                coords: [-38.2770, -57.8340],
+                rating: 4,
+                coords: [-38.2760, -57.8310],
                 url: "https://www.properati.com.ar",
                 photos: [
-                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Vista lateral al mar", "Edificio con gas natural conectado"],
-                cons: ["Valor por m2 más elevado"],
+                pros: ["Vista panorámica al mar", "Edificio con ascensor grande"],
+                cons: ["Cocina algo pequeña"],
                 notes: ""
             },
             {
                 id: 8,
-                title: "Depto 2 amb (44 años) - Av 12 1000",
+                title: "Depto 2 Amb 43m2 - Avenida 12 1000",
                 portal: "Argenprop",
-                address: "Avenida 12 N° 1000, Miramar",
+                address: "Avenida 12 Nº 1000, Miramar",
                 zone: "Zona 1",
-                price: 39900,
+                price: 44000,
                 m2: 43,
+                rooms: 2,
                 visited: false,
                 rating: 3,
-                coords: [-38.2710, -57.8380],
-                url: "https://www.argenprop.com",
+                coords: [-38.2705, -57.8390],
+                url: "https://www.argenprop.com.ar",
                 photos: [
-                    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["M² amplios por el precio", "Excelente ubicación comercial"],
-                cons: ["44 años de antigüedad"],
-                notes: ""
+                pros: ["Amplio living comedor", "Placard empotrado amplio"],
+                cons: ["Antigüedad 44 años"],
+                notes: "Edificio bien mantenido a pesar de la antigüedad."
             },
             {
                 id: 9,
-                title: "Depto 2 amb Interno PB - Calle 18",
+                title: "Depto 2 Amb Interno PB Calle 18",
                 portal: "Argenprop",
-                address: "Calle 18 N° 500 PB, Miramar",
+                address: "Calle 18 Nº 500 Planta Baja, Miramar",
                 zone: "Zona 1",
-                price: 36000,
-                m2: 38,
-                visited: false,
+                price: 37000,
+                m2: 36,
+                rooms: 2,
+                visited: true,
                 rating: 2,
-                coords: [-38.2728, -57.8405],
-                url: "https://www.argenprop.com",
+                coords: [-38.2728, -57.8375],
+                url: "https://www.argenprop.com.ar",
                 photos: [
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Planta baja (sin escaleras/ascensor)", "El más accesible en precio"],
-                cons: ["Interno, poca ventilación directa"],
-                notes: ""
+                pros: ["Planta baja", "Muy económico"],
+                cons: ["Interno, poca luz natural", "Patio interno pequeño"],
+                notes: "Descartado por falta de luz solar."
             },
             {
                 id: 10,
-                title: "Depto 2 amb de 38m² - U$S 42.500",
+                title: "Depto 2 Amb 38m² – Av Costanera 1400",
                 portal: "Roomix",
-                address: "Calle 23 entre 16 y 18, Miramar",
+                address: "Avenida Costanera 1400, Miramar",
                 zone: "Zona 1",
                 price: 42500,
                 m2: 38,
+                rooms: 2,
                 visited: false,
-                rating: 4,
-                coords: [-38.2740, -57.8390],
-                url: "https://www.roomix.com.ar",
+                rating: 5,
+                coords: [-38.2750, -57.8300],
+                url: "https://roomix.ai/propiedad/departamento-2-ambientes-miramar-fe3de861",
                 photos: [
-                    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Excelente estado de conservación", "Expensas bajas"],
-                cons: ["Dormitorio un poco estrecho"],
-                notes: ""
+                pros: ["Frente al mar", "Balcón saliente", "A 300m de la peatonal", "Lavadero"],
+                cons: ["Disposición al contrafrente"],
+                notes: "Excelente opción para alquiler temporario. Comercializa Sekulich."
             },
             {
                 id: 11,
-                title: "Depto 2 amb Frente Luminoso 36m²",
+                title: "Venta Depto 2 amb Frente Luminoso 36m²",
                 portal: "Roomix",
-                address: "Calle 16 entre 19 y 21, Miramar",
+                address: "Calle 23 e/ 16 y 18, Miramar",
                 zone: "Zona 1",
-                price: 41500,
+                price: 40000,
                 m2: 36,
+                rooms: 2,
                 visited: false,
-                rating: 3,
-                coords: [-38.2735, -57.8370],
-                url: "https://www.roomix.com.ar",
+                rating: 4,
+                coords: [-38.2738, -57.8360],
+                url: "https://roomix.ai",
                 photos: [
-                    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Súper luminoso al frente", "Orientación Este"],
-                cons: ["Superficie compacta (36m²)"],
+                pros: ["Muy luminoso", "Al frente"],
+                cons: ["36 m² reducidos"],
                 notes: ""
             },
             {
                 id: 12,
-                title: "Depto en Venta Zona I (Opción A)",
+                title: "Depto en Venta en Zona I Opción A",
                 portal: "Inmuebles en Miramar",
-                address: "Calle 19 entre 14 y 16, Zona I, Miramar",
-                zone: "Zona 1",
-                price: 44000,
-                m2: 40,
+                address: "Calle 15 e/ 18 y 20, Miramar",
+                zone: "Zona I",
+                price: 41500,
+                m2: 39,
+                rooms: 2,
                 visited: false,
                 rating: 3,
-                coords: [-38.2732, -57.8362],
-                url: "https://www.inmueblesenmiramar.com.ar",
+                coords: [-38.2718, -57.8348],
+                url: "http://www.inmueblesenmiramar.com",
                 photos: [
-                    "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Buena distribución de ambientes"],
-                cons: ["Obra de gas pendiente en edificio"],
+                pros: ["Buena relación m2/precio"],
+                cons: ["Requiere arreglos de plomería"],
                 notes: ""
             },
             {
                 id: 13,
-                title: "Depto en Venta Zona I (Opción B)",
+                title: "Depto en Venta en Zona I Opción B",
                 portal: "Inmuebles en Miramar",
-                address: "Calle 21 entre 12 y 14, Zona I, Miramar",
-                zone: "Zona 1",
-                price: 47000,
-                m2: 41,
+                address: "Calle 25 e/ 12 y 14, Miramar",
+                zone: "Zona I",
+                price: 43500,
+                m2: 40,
+                rooms: 2,
                 visited: false,
                 rating: 4,
-                coords: [-38.2748, -57.8368],
-                url: "https://www.inmueblesenmiramar.com.ar",
+                coords: [-38.2755, -57.8370],
+                url: "http://www.inmueblesenmiramar.com",
                 photos: [
-                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Cerca del paseo peatonal", "Acepta permuta menor valor"],
-                cons: ["Piso alto sin vista al mar"],
+                pros: ["Edificio tranquilo", "Pisos flotantes nuevos"],
+                cons: ["Sin cochera"],
                 notes: ""
             },
             {
                 id: 14,
-                title: "Depto en Venta Zona I (Opción C)",
+                title: "Depto en Venta en Zona I Opción C",
                 portal: "Inmuebles en Miramar",
-                address: "Calle 15 y 22, Zona I, Miramar",
-                zone: "Zona 1",
-                price: 43500,
-                m2: 39,
+                address: "Calle 19 e/ 16 y 18, Miramar",
+                zone: "Zona I",
+                price: 47000,
+                m2: 44,
+                rooms: 2,
                 visited: false,
-                rating: 3,
-                coords: [-38.2725, -57.8395],
-                url: "https://www.inmueblesenmiramar.com.ar",
+                rating: 4,
+                coords: [-38.2732, -57.8335],
+                url: "http://www.inmueblesenmiramar.com",
                 photos: [
-                    "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"
                 ],
-                pros: ["Ambientes reciclados", "Plano muy funcional"],
-                cons: ["Edificio antiguo"],
+                pros: ["Piso alto muy luminoso", "Cocina reciclada"],
+                cons: ["Precio un poco más elevado"],
                 notes: ""
             }
         ];
 
-        // Application State Management
-        let properties = [];
-        let activePropIdForModal = null;
+        // Make properties globally available
+        window.properties = [];
+        let photoIndexes = {};
         let map = null;
-        let mapMarkers = [];
+        let markers = [];
         let m2ChartInstance = null;
-        let currentPhotoIndices = {};
 
-        // Load or Initialize Data from LocalStorage
-        function initApp() {
-            const saved = localStorage.getItem('miramar_deptos_data');
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPropertiesData();
+        });
+
+        // Function to refresh the page/data manually
+        window.refreshApp = function() {
+            const icon = document.getElementById('refresh-icon');
+            if (icon) icon.classList.add('animate-spin');
+            
+            loadPropertiesData();
+            
+            setTimeout(() => {
+                if (icon) icon.classList.remove('animate-spin');
+            }, 600);
+        };
+
+        // Load properties
+        async function loadPropertiesData() {
+            const saved = localStorage.getItem('miramar_deptos_local');
             if (saved) {
                 try {
-                    properties = JSON.parse(saved);
+                    window.properties = JSON.parse(saved);
                 } catch(e) {
-                    properties = [...INITIAL_PROPERTIES];
+                    window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
                 }
             } else {
-                properties = [...INITIAL_PROPERTIES];
+                window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
             }
-
-            // Initialize photo index tracking for sliders
-            properties.forEach(p => {
-                currentPhotoIndices[p.id] = 0;
-            });
-
-            renderCards();
-            updateGlobalStats();
+            window.saveLocalData();
+            window.initUI();
         }
 
-        // Save State to LocalStorage
-        function saveData() {
-            localStorage.setItem('miramar_deptos_data', JSON.stringify(properties));
+        window.initUI = function() {
+            renderCards();
+            updateGlobalStats();
+            renderPhotosView();
+
+            const priceInput = document.getElementById('edit-price');
+            const m2Input = document.getElementById('edit-m2');
+            if (priceInput && m2Input) {
+                priceInput.addEventListener('input', calculateM2Preview);
+                m2Input.addEventListener('input', calculateM2Preview);
+            }
+        };
+
+        window.saveLocalData = function() {
+            localStorage.setItem('miramar_deptos_local', JSON.stringify(window.properties));
+        };
+
+        function triggerDataChange() {
+            window.saveLocalData();
+            if (typeof window.syncToCloud === 'function') {
+                window.syncToCloud();
+            }
+            renderCards();
             updateGlobalStats();
             if (map) updateMapMarkers();
             if (m2ChartInstance) updateChart();
+            renderPhotosView();
         }
 
-        function resetData() {
-            if (confirm("¿Deseas restablecer todos los pros, contras, notas y estados de visita a su valor original?")) {
-                localStorage.removeItem('miramar_deptos_data');
-                properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
-                properties.forEach(p => { currentPhotoIndices[p.id] = 0; });
-                renderCards();
-                updateGlobalStats();
-                showToast("Datos restablecidos con éxito");
+        // Export/Import Local JSON
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.properties, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "data.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSON(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        window.properties = importedData;
+                        triggerDataChange();
+                        alert("¡Datos importados y sincronizados con éxito!");
+                    } else {
+                        alert("El archivo no tiene el formato JSON válido.");
+                    }
+                } catch (err) {
+                    alert("Error al leer el archivo JSON.");
+                }
+            };
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0]);
             }
         }
 
-        // Update Header Statistics
+        function resetData() {
+            if (confirm("¿Deseas restablecer todos los datos a la lista inicial?")) {
+                localStorage.removeItem('miramar_deptos_local');
+                window.properties = JSON.parse(JSON.stringify(INITIAL_PROPERTIES));
+                triggerDataChange();
+            }
+        }
+
+        // Calculate Opportunity Score
+        function calculateOpportunityScore(p, avgM2) {
+            const m2Val = p.price / p.m2;
+            let score = 50; // base
+
+            // Price ratio compared to market average
+            if (avgM2 > 0) {
+                const diffRatio = (avgM2 - m2Val) / avgM2; 
+                score += diffRatio * 100; // cheaper -> higher score
+            }
+
+            // Pros and Cons weight
+            score += (p.pros ? p.pros.length : 0) * 5;
+            score -= (p.cons ? p.cons.length : 0) * 5;
+
+            // User rating weight
+            if (p.rating) score += (p.rating - 3) * 10;
+
+            return Math.min(Math.max(Math.round(score), 10), 99);
+        }
+
+        // Global Statistics Update
         function updateGlobalStats() {
-            const total = properties.length;
-            const visited = properties.filter(p => p.visited).length;
+            const total = window.properties.length;
+            const visited = window.properties.filter(p => p.visited).length;
             
-            // Average USD / M2 calculation
-            const avgM2 = Math.round(
-                properties.reduce((acc, p) => acc + (p.price / p.m2), 0) / total
-            );
+            let avgM2 = 0;
+            if (total > 0) {
+                const sumM2 = window.properties.reduce((acc, p) => acc + (p.price / p.m2), 0);
+                avgM2 = Math.round(sumM2 / total);
+            }
 
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-visited').innerText = `${visited} / ${total}`;
-            document.getElementById('stat-avg-m2').innerText = `USD ${avgM2.toLocaleString('es-AR')}`;
+            document.getElementById('stat-avg-m2').innerText = `USD ${avgM2.toLocaleString()}`;
+            
+            const chartAvgEl = document.getElementById('chart-avg');
+            if (chartAvgEl) chartAvgEl.innerText = avgM2.toLocaleString();
         }
 
         // Render Property Cards
         function renderCards() {
-            const container = document.getElementById('view-cards');
-            const searchVal = document.getElementById('search-input').value.toLowerCase();
-            const visitedVal = document.getElementById('filter-visited').value;
-            const zoneVal = document.getElementById('filter-zone').value;
-            const sortBy = document.getElementById('sort-by').value;
-
-            // Filtering
-            let filtered = properties.filter(p => {
-                const matchesSearch = p.title.toLowerCase().includes(searchVal) || 
-                                     p.portal.toLowerCase().includes(searchVal) || 
-                                     p.address.toLowerCase().includes(searchVal);
-                
-                const matchesVisited = visitedVal === 'all' ? true : 
-                                       visitedVal === 'visited' ? p.visited : !p.visited;
-
-                const matchesZone = zoneVal === 'all' ? true : p.zone === zoneVal;
-
-                return matchesSearch && matchesVisited && matchesZone;
-            });
-
-            // Sorting
-            filtered.sort((a, b) => {
-                const m2ValA = a.price / a.m2;
-                const m2ValB = b.price / b.m2;
-                if (sortBy === 'm2-asc') return m2ValA - m2ValB;
-                if (sortBy === 'm2-desc') return m2ValB - m2ValA;
-                if (sortBy === 'price-asc') return a.price - b.price;
-                if (sortBy === 'price-desc') return b.price - a.price;
-                if (sortBy === 'rating-desc') return b.rating - a.rating;
-                return a.id - b.id;
-            });
+            const container = document.getElementById('cards-container');
+            if (!container) return;
+            
+            const filtered = getFilteredProperties();
+            container.innerHTML = '';
 
             if (filtered.length === 0) {
                 container.innerHTML = `
-                    <div class="col-span-full py-12 text-center text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
-                        <i class="fa-solid fa-building-circle-xmark text-4xl mb-3 text-slate-300"></i>
-                        <p class="font-medium">No se encontraron departamentos con los filtros actuales.</p>
-                        <button onclick="clearFilters()" class="mt-3 text-xs bg-ocean-50 text-ocean-700 px-3 py-1.5 rounded-lg border border-ocean-200">Limpiar Filtros</button>
+                    <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-building-circle-xmark text-4xl mb-2"></i>
+                        <p class="text-sm font-medium">No se encontraron departamentos con los filtros aplicados.</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = filtered.map(p => {
+            const total = window.properties.length;
+            const avgM2 = total > 0 ? Math.round(window.properties.reduce((acc, p) => acc + (p.price / p.m2), 0) / total) : 1080;
+
+            filtered.forEach(p => {
                 const pricePerM2 = Math.round(p.price / p.m2);
-                const currentPhoto = p.photos[currentPhotoIndices[p.id] || 0];
+                if (photoIndexes[p.id] === undefined) photoIndexes[p.id] = 0;
+                const currentPhotoIdx = photoIndexes[p.id];
+                const oppScore = calculateOpportunityScore(p, avgM2);
 
-                return `
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between property-card relative">
-                    
-                    <!-- Visited Badge / Toggle -->
-                    <div class="absolute top-3 left-3 z-20">
-                        <button onclick="toggleVisited(${p.id})" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-md transition-all ${
-                            p.visited 
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
-                            : 'bg-slate-900/70 text-white backdrop-blur-md hover:bg-slate-900'
-                        }">
-                            <i class="fa-solid ${p.visited ? 'fa-check-circle text-emerald-300' : 'fa-eye'}"></i>
-                            ${p.visited ? 'Visitado' : 'Pendiente'}
-                        </button>
-                    </div>
+                let badgeColor = "bg-amber-500 text-white";
+                if (oppScore >= 75) badgeColor = "bg-emerald-600 text-white";
+                else if (oppScore < 45) badgeColor = "bg-slate-600 text-white";
 
-                    <!-- Portal Badge -->
-                    <div class="absolute top-3 right-3 z-20">
-                        <span class="bg-slate-900/70 text-slate-200 text-[10px] font-medium px-2.5 py-1 rounded-full backdrop-blur-md border border-slate-700/50">
-                            ${p.portal}
-                        </span>
-                    </div>
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl shadow-sm border ${p.visited ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200'} overflow-hidden flex flex-col justify-between transition hover:shadow-md`;
 
-                    <!-- Photo Slider Carousel -->
-                    <div class="relative h-48 bg-slate-900 overflow-hidden group">
-                        <img src="${currentPhoto}" alt="${p.title}" class="w-full h-full object-cover transition-all duration-300" onerror="this.src='https://placehold.co/600x400/0f172a/ffffff?text=Sin+Imagen'">
-                        
-                        ${p.photos.length > 1 ? `
-                            <!-- Left Arrow -->
-                            <button onclick="prevPhoto(${p.id}, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                                <i class="fa-solid fa-chevron-left"></i>
+                card.innerHTML = `
+                    <div>
+                        <!-- Photo Carousel Header -->
+                        <div class="relative h-48 bg-slate-900 group">
+                            <img src="${p.photos[currentPhotoIdx] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80'}" 
+                                 alt="${p.title}" 
+                                 class="w-full h-full object-cover" 
+                                 onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80'">
+
+                            <!-- Portal Badge -->
+                            <span class="absolute top-2 left-2 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded backdrop-blur-sm">
+                                ${p.portal}
+                            </span>
+
+                            <!-- Opportunity Smart Score -->
+                            <span class="absolute bottom-2 right-2 ${badgeColor} text-[10px] font-bold px-2 py-1 rounded-md shadow-md flex items-center gap-1" title="Score de oportunidad calculado">
+                                <i class="fa-solid fa-bolt"></i> Score: ${oppScore}/100
+                            </span>
+
+                            <!-- Visited Toggle Button -->
+                            <button onclick="toggleVisited(${p.id})" class="absolute top-2 right-2 ${p.visited ? 'bg-emerald-600 text-white' : 'bg-slate-900/70 text-slate-200 hover:bg-slate-900'} text-[11px] font-semibold px-2.5 py-1 rounded-lg backdrop-blur-sm transition flex items-center gap-1">
+                                <i class="fa-solid ${p.visited ? 'fa-circle-check' : 'fa-circle'} text-[10px]"></i>
+                                <span>${p.visited ? 'Visitado' : 'Pendiente'}</span>
                             </button>
-                            <!-- Right Arrow -->
-                            <button onclick="nextPhoto(${p.id}, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
-                            <!-- Photo Indicator -->
-                            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                ${(currentPhotoIndices[p.id] || 0) + 1} / ${p.photos.length}
-                            </div>
-                        ` : ''}
-                    </div>
 
-                    <!-- Card Body -->
-                    <div class="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-start mb-1">
-                                <h3 class="font-bold text-slate-900 text-base leading-snug line-clamp-1">${p.title}</h3>
-                            </div>
-                            <p class="text-xs text-slate-500 mb-3 flex items-center gap-1">
-                                <i class="fa-solid fa-location-dot text-ocean-600"></i> ${p.address}
-                            </p>
+                            <!-- Carousel Controls (If > 1 photo) -->
+                            ${p.photos.length > 1 ? `
+                                <button onclick="prevPhoto(${p.id}, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 transition">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button onclick="nextPhoto(${p.id}, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/60 hover:bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 transition">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/70 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                    ${currentPhotoIdx + 1} / ${p.photos.length}
+                                </div>
+                            ` : ''}
+                        </div>
 
-                            <!-- Key Numbers: Total & USD/m2 -->
-                            <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 rounded-xl mb-3 border border-slate-100">
+                        <!-- Card Content -->
+                        <div class="p-4 space-y-3">
+                            <div class="flex justify-between items-start gap-2">
                                 <div>
-                                    <span class="text-[10px] text-slate-400 font-semibold uppercase block">Precio Total</span>
-                                    <span class="text-base font-extrabold text-slate-900">USD ${p.price.toLocaleString('es-AR')}</span>
+                                    <h3 class="font-bold text-slate-800 text-sm leading-snug line-clamp-2">${p.title}</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                                        <i class="fa-solid fa-location-dot text-slate-400"></i> ${p.address}
+                                    </p>
                                 </div>
-                                <div class="border-l border-slate-200 pl-2.5">
-                                    <span class="text-[10px] text-slate-500 font-semibold uppercase block">Valor por m²</span>
-                                    <span class="text-base font-extrabold text-ocean-600">USD ${pricePerM2.toLocaleString('es-AR')} <span class="text-[10px] font-normal text-slate-400">/m²</span></span>
+                                <button onclick="openEditModal(${p.id})" title="Editar Departamento" class="text-slate-400 hover:text-ocean-600 p-1">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                            </div>
+
+                            <!-- Pricing & m2 stats -->
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 grid grid-cols-2 gap-2 text-center">
+                                <div>
+                                    <span class="text-[10px] uppercase font-semibold text-slate-400 block">Precio Total</span>
+                                    <span class="font-bold text-slate-800 text-base">USD ${p.price.toLocaleString()}</span>
+                                </div>
+                                <div class="border-l border-slate-200 pl-2">
+                                    <span class="text-[10px] uppercase font-semibold text-slate-400 block">Valor por m²</span>
+                                    <span class="font-bold text-ocean-600 text-base">USD ${pricePerM2.toLocaleString()}</span>
                                 </div>
                             </div>
 
-                            <!-- Spec Badges -->
-                            <div class="flex items-center gap-3 text-xs text-slate-600 mb-3 pb-3 border-b border-slate-100">
-                                <span><i class="fa-solid fa-ruler-combined text-slate-400 mr-1"></i>${p.m2} m²</span>
-                                <span><i class="fa-solid fa-door-open text-slate-400 mr-1"></i>${p.rooms || 2} Amb.</span>
-                                <span><i class="fa-solid fa-map text-slate-400 mr-1"></i>${p.zone}</span>
+                            <!-- Specs & Room Badges -->
+                            <div class="flex items-center justify-between text-xs text-slate-600 px-1 pt-1 border-b border-slate-100 pb-2">
+                                <span><i class="fa-solid fa-ruler-combined text-slate-400 mr-1"></i> ${p.m2} m² cubiertos</span>
+                                <span><i class="fa-solid fa-door-open text-slate-400 mr-1"></i> ${p.rooms} amb</span>
+                                <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium text-slate-600">${p.zone}</span>
                             </div>
 
-                            <!-- Rating Stars -->
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs text-slate-500 font-medium">Mi Valoración:</span>
-                                <div class="flex gap-1 text-amber-400 text-sm">
+                            <!-- Rating stars -->
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500 font-medium">Calificación:</span>
+                                <div class="flex space-x-1 text-amber-400">
                                     ${[1, 2, 3, 4, 5].map(star => `
-                                        <button onclick="setRating(${p.id}, ${star})" class="focus:outline-none hover:scale-110 transition-transform">
-                                            <i class="fa-${star <= p.rating ? 'solid' : 'regular'} fa-star"></i>
+                                        <button onclick="setRating(${p.id}, ${star})" class="focus:outline-none hover:scale-110 transition">
+                                            <i class="${star <= (p.rating || 0) ? 'fa-solid' : 'fa-regular'} fa-star"></i>
                                         </button>
                                     `).join('')}
                                 </div>
                             </div>
 
-                            <!-- Pros & Cons Summary Preview -->
-                            <div class="space-y-1.5 mb-3">
-                                ${p.pros.slice(0, 2).map(pro => `
-                                    <div class="text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md flex items-center gap-1.5">
-                                        <i class="fa-solid fa-check text-[10px] shrink-0"></i>
-                                        <span class="truncate">${pro}</span>
-                                    </div>
-                                `).join('')}
-                                ${p.cons.slice(0, 2).map(con => `
-                                    <div class="text-xs text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md flex items-center gap-1.5">
-                                        <i class="fa-solid fa-xmark text-[10px] shrink-0"></i>
-                                        <span class="truncate">${con}</span>
-                                    </div>
-                                `).join('')}
+                            <!-- Pros & Cons list -->
+                            <div class="space-y-1.5 pt-1">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-slate-700">Pros / Contras</span>
+                                    <button onclick="openProConModal(${p.id})" class="text-ocean-600 hover:underline text-[11px]">Editar</button>
+                                </div>
+                                
+                                <ul class="text-[11px] space-y-1">
+                                    ${p.pros ? p.pros.map(pro => `
+                                        <li class="text-emerald-700 flex items-start gap-1.5">
+                                            <i class="fa-solid fa-check text-emerald-500 mt-0.5"></i> <span>${pro}</span>
+                                        </li>
+                                    `).join('') : ''}
+                                    ${p.cons ? p.cons.map(con => `
+                                        <li class="text-rose-700 flex items-start gap-1.5">
+                                            <i class="fa-solid fa-xmark text-rose-500 mt-0.5"></i> <span>${con}</span>
+                                        </li>
+                                    `).join('') : ''}
+                                </ul>
+                            </div>
+
+                            <!-- Personal Notes field -->
+                            <div class="pt-2">
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Notas personales:</label>
+                                <textarea onblur="updateNote(${p.id}, this.value)" placeholder="Escribe impresiones o detalles de la visita..." class="w-full text-xs p-2 border border-slate-200 rounded-lg focus:ring-1 focus:ring-ocean-500 focus:outline-none bg-slate-50/50 resize-none" rows="2">${p.notes || ''}</textarea>
                             </div>
                         </div>
-
-                        <!-- Card Footer Buttons -->
-                        <div class="pt-2 flex items-center gap-1.5 flex-wrap">
-                            <button onclick="openEditModal(${p.id})" title="Editar datos principales (precio, m², dirección, etc.)" class="bg-ocean-50 hover:bg-ocean-100 text-ocean-700 p-2 rounded-lg text-xs font-semibold transition border border-ocean-200 flex items-center gap-1">
-                                <i class="fa-solid fa-pen"></i> Datos
-                            </button>
-                            <button onclick="openProConModal(${p.id})" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-2 rounded-lg font-medium transition flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-list-check text-ocean-600"></i> Pros/Contras
-                            </button>
-                            <button onclick="openPhotoModal(${p.id})" title="Gestionar imágenes" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-lg text-xs transition">
-                                <i class="fa-solid fa-image text-ocean-600"></i>
-                            </button>
-                            <a href="${p.url}" target="_blank" rel="noopener noreferrer" title="Abrir publicación original" class="bg-slate-800 hover:bg-slate-900 text-white p-2 rounded-lg text-xs transition">
-                                <i class="fa-solid fa-external-link"></i>
-                            </a>
-                        </div>
-
                     </div>
-                </div>
+
+                    <!-- Footer Link Button -->
+                    <div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <a href="${p.url}" target="_blank" class="text-ocean-600 hover:text-ocean-700 font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Ver en ${p.portal}
+                        </a>
+                        <button onclick="deleteProperty(${p.id})" class="text-slate-400 hover:text-rose-600 transition" title="Eliminar departamento">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
                 `;
-            }).join('');
+
+                container.appendChild(card);
+            });
         }
 
-        // --- FULL PROPERTY DETAILS EDIT MODAL LOGIC ---
-        function openEditModal(propId) {
-            const modal = document.getElementById('edit-property-modal');
-            const titleEl = document.getElementById('edit-modal-title');
-            
-            if (propId) {
-                const prop = properties.find(p => p.id === propId);
-                if (!prop) return;
-                
-                titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square text-ocean-400"></i> Editar Departamento`;
-                document.getElementById('edit-prop-id').value = prop.id;
-                document.getElementById('edit-title').value = prop.title;
-                document.getElementById('edit-portal').value = prop.portal || '';
-                document.getElementById('edit-zone').value = prop.zone || 'Zona 1';
-                document.getElementById('edit-address').value = prop.address || '';
-                document.getElementById('edit-price').value = prop.price || 0;
-                document.getElementById('edit-m2').value = prop.m2 || 1;
-                document.getElementById('edit-rooms').value = prop.rooms || 2;
-                document.getElementById('edit-url').value = prop.url || '';
-            } else {
-                titleEl.innerHTML = `<i class="fa-solid fa-plus text-ocean-400"></i> Nuevo Departamento`;
-                document.getElementById('edit-prop-id').value = '';
-                document.getElementById('edit-title').value = 'Nuevo Departamento';
-                document.getElementById('edit-portal').value = 'Otro';
-                document.getElementById('edit-zone').value = 'Zona 1';
-                document.getElementById('edit-address').value = 'Calle Miramar';
-                document.getElementById('edit-price').value = 45000;
-                document.getElementById('edit-m2').value = 40;
-                document.getElementById('edit-rooms').value = 2;
-                document.getElementById('edit-url').value = '';
-            }
-
-            calculateModalM2Preview();
-            modal.classList.remove('hidden');
-        }
-
-        function closeEditModal() {
-            document.getElementById('edit-property-modal').classList.add('hidden');
-        }
-
-        function calculateModalM2Preview() {
-            const price = parseFloat(document.getElementById('edit-price').value) || 0;
-            const m2 = parseFloat(document.getElementById('edit-m2').value) || 1;
-            const val = m2 > 0 ? Math.round(price / m2) : 0;
-            document.getElementById('modal-m2-preview').innerText = `USD ${val.toLocaleString('es-AR')} / m²`;
-        }
-
-        function savePropertyDetails(e) {
-            e.preventDefault();
-            const idVal = document.getElementById('edit-prop-id').value;
-            const price = parseFloat(document.getElementById('edit-price').value) || 0;
-            const m2 = parseFloat(document.getElementById('edit-m2').value) || 1;
-            
-            if (idVal) {
-                // Editing existing property
-                const prop = properties.find(p => p.id === parseInt(idVal));
-                if (prop) {
-                    prop.title = document.getElementById('edit-title').value.trim();
-                    prop.portal = document.getElementById('edit-portal').value.trim() || 'Portal';
-                    prop.zone = document.getElementById('edit-zone').value.trim() || 'Zona 1';
-                    prop.address = document.getElementById('edit-address').value.trim();
-                    prop.price = price;
-                    prop.m2 = m2;
-                    prop.rooms = parseInt(document.getElementById('edit-rooms').value) || 2;
-                    prop.url = document.getElementById('edit-url').value.trim() || '#';
-                }
-            } else {
-                // Creating new property
-                const newId = properties.length > 0 ? Math.max(...properties.map(p => p.id)) + 1 : 1;
-                properties.push({
-                    id: newId,
-                    title: document.getElementById('edit-title').value.trim(),
-                    portal: document.getElementById('edit-portal').value.trim() || 'Otro',
-                    address: document.getElementById('edit-address').value.trim(),
-                    zone: document.getElementById('edit-zone').value.trim() || 'Zona 1',
-                    price: price,
-                    m2: m2,
-                    rooms: parseInt(document.getElementById('edit-rooms').value) || 2,
-                    visited: false,
-                    rating: 3,
-                    coords: [-38.2740 + (Math.random() * 0.01 - 0.005), -57.8380 + (Math.random() * 0.01 - 0.005)],
-                    url: document.getElementById('edit-url').value.trim() || '#',
-                    photos: [
-                        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80"
-                    ],
-                    pros: [],
-                    cons: [],
-                    notes: ""
-                });
-                currentPhotoIndices[newId] = 0;
-            }
-
-            saveData();
-            renderCards();
-            closeEditModal();
-            showToast("Propiedad guardada y valor por m² actualizado");
-        }
-
-        // Photo Slider Nav
-        function nextPhoto(propId, e) {
+        // Carousel Photos controls
+        function prevPhoto(id, e) {
             e.stopPropagation();
-            const prop = properties.find(p => p.id === propId);
+            const prop = window.properties.find(p => p.id === id);
             if (!prop) return;
-            currentPhotoIndices[propId] = (currentPhotoIndices[propId] + 1) % prop.photos.length;
+            if (photoIndexes[id] > 0) {
+                photoIndexes[id]--;
+            } else {
+                photoIndexes[id] = prop.photos.length - 1;
+            }
             renderCards();
         }
 
-        function prevPhoto(propId, e) {
+        function nextPhoto(id, e) {
             e.stopPropagation();
-            const prop = properties.find(p => p.id === propId);
+            const prop = window.properties.find(p => p.id === id);
             if (!prop) return;
-            currentPhotoIndices[propId] = (currentPhotoIndices[propId] - 1 + prop.photos.length) % prop.photos.length;
+            if (photoIndexes[id] < prop.photos.length - 1) {
+                photoIndexes[id]++;
+            } else {
+                photoIndexes[id] = 0;
+            }
             renderCards();
         }
 
-        // Toggle Visited Status
-        function toggleVisited(propId) {
-            const prop = properties.find(p => p.id === propId);
+        // State update handlers
+        function toggleVisited(id) {
+            const prop = window.properties.find(p => p.id === id);
             if (prop) {
                 prop.visited = !prop.visited;
-                saveData();
-                renderCards();
-                showToast(prop.visited ? "Marcado como visitado" : "Marcado como pendiente");
+                triggerDataChange();
             }
         }
 
-        // Rating Stars Handler
-        function setRating(propId, rating) {
-            const prop = properties.find(p => p.id === propId);
+        function setRating(id, rating) {
+            const prop = window.properties.find(p => p.id === id);
             if (prop) {
                 prop.rating = rating;
-                saveData();
-                renderCards();
+                triggerDataChange();
             }
         }
 
-        // Apply Filters and Search
+        function updateNote(id, note) {
+            const prop = window.properties.find(p => p.id === id);
+            if (prop && prop.notes !== note) {
+                prop.notes = note;
+                triggerDataChange();
+            }
+        }
+
+        function deleteProperty(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este departamento?")) {
+                window.properties = window.properties.filter(p => p.id !== id);
+                triggerDataChange();
+            }
+        }
+
+        // Filtering & Sorting
+        function getFilteredProperties() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const visitedFilter = document.getElementById('filter-visited').value;
+            const zoneFilter = document.getElementById('filter-zone').value;
+            const maxPriceFilter = document.getElementById('filter-max-price').value;
+            const sortBy = document.getElementById('sort-by').value;
+
+            return window.properties.filter(p => {
+                const matchesSearch = p.title.toLowerCase().includes(search) || 
+                                      p.address.toLowerCase().includes(search) || 
+                                      p.portal.toLowerCase().includes(search);
+                
+                let matchesVisited = true;
+                if (visitedFilter === 'visited') matchesVisited = p.visited;
+                if (visitedFilter === 'pending') matchesVisited = !p.visited;
+
+                let matchesZone = true;
+                if (zoneFilter !== 'all') matchesZone = p.zone === zoneFilter;
+
+                let matchesPrice = true;
+                if (maxPriceFilter !== 'all') matchesPrice = p.price <= parseFloat(maxPriceFilter);
+
+                return matchesSearch && matchesVisited && matchesZone && matchesPrice;
+            }).sort((a, b) => {
+                if (sortBy === 'm2-asc') return (a.price / a.m2) - (b.price / b.m2);
+                if (sortBy === 'm2-desc') return (b.price / b.m2) - (a.price / a.m2);
+                if (sortBy === 'price-asc') return a.price - b.price;
+                if (sortBy === 'price-desc') return b.price - a.price;
+                if (sortBy === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
+                return a.id - b.id;
+            });
+        }
+
         function applyFilters() {
             renderCards();
         }
 
-        // Filter Controls Reset
-        function clearFilters() {
-            document.getElementById('search-input').value = '';
-            document.getElementById('filter-visited').value = 'all';
-            document.getElementById('filter-zone').value = 'all';
-            document.getElementById('sort-by').value = 'default';
-            renderCards();
-        }
-
-        // Pros & Cons Modal Management
-        function openProConModal(propId) {
-            activePropIdForModal = propId;
-            const prop = properties.find(p => p.id === propId);
-            if (!prop) return;
-
-            document.getElementById('modal-title').innerText = `Editar: ${prop.title}`;
-            document.getElementById('modal-notes-input').value = prop.notes || '';
-            renderModalProsCons();
-            document.getElementById('procon-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('procon-modal').classList.add('hidden');
-            activePropIdForModal = null;
-        }
-
-        function renderModalProsCons() {
-            const prop = properties.find(p => p.id === activePropIdForModal);
-            if (!prop) return;
-
-            const prosContainer = document.getElementById('modal-pros-list');
-            prosContainer.innerHTML = prop.pros.map((pro, index) => `
-                <div class="flex items-center justify-between text-xs bg-emerald-50 text-emerald-800 p-2 rounded-lg">
-                    <span><i class="fa-solid fa-check mr-1.5"></i>${pro}</span>
-                    <button onclick="removePro(${index})" class="text-emerald-600 hover:text-emerald-900 p-1">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
-
-            const consContainer = document.getElementById('modal-cons-list');
-            consContainer.innerHTML = prop.cons.map((con, index) => `
-                <div class="flex items-center justify-between text-xs bg-rose-50 text-rose-800 p-2 rounded-lg">
-                    <span><i class="fa-solid fa-xmark mr-1.5"></i>${con}</span>
-                    <button onclick="removeCon(${index})" class="text-rose-600 hover:text-rose-900 p-1">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function addPro() {
-            const input = document.getElementById('new-pro-input');
-            const val = input.value.trim();
-            if (!val || !activePropIdForModal) return;
-
-            const prop = properties.find(p => p.id === activePropIdForModal);
-            if (prop) {
-                prop.pros.push(val);
-                input.value = '';
-                renderModalProsCons();
-            }
-        }
-
-        function removePro(index) {
-            const prop = properties.find(p => p.id === activePropIdForModal);
-            if (prop) {
-                prop.pros.splice(index, 1);
-                renderModalProsCons();
-            }
-        }
-
-        function addCon() {
-            const input = document.getElementById('new-con-input');
-            const val = input.value.trim();
-            if (!val || !activePropIdForModal) return;
-
-            const prop = properties.find(p => p.id === activePropIdForModal);
-            if (prop) {
-                prop.cons.push(val);
-                input.value = '';
-                renderModalProsCons();
-            }
-        }
-
-        function removeCon(index) {
-            const prop = properties.find(p => p.id === activePropIdForModal);
-            if (prop) {
-                prop.cons.splice(index, 1);
-                renderModalProsCons();
-            }
-        }
-
-        function saveModalChanges() {
-            const prop = properties.find(p => p.id === activePropIdForModal);
-            if (prop) {
-                prop.notes = document.getElementById('modal-notes-input').value.trim();
-                saveData();
-                renderCards();
-                closeModal();
-                showToast("Cambios guardados");
-            }
-        }
-
-        // View Tabs Switching (Cards vs Map & Analytics vs Photos)
+        // Navigation Tabs Switcher
         function switchTab(tab) {
-            const cardsView = document.getElementById('view-cards');
-            const mapView = document.getElementById('view-map');
-            const photosView = document.getElementById('view-photos');
+            document.getElementById('view-cards').classList.add('hidden');
+            document.getElementById('view-map').classList.add('hidden');
+            document.getElementById('view-photos').classList.add('hidden');
 
-            const cardsBtn = document.getElementById('tab-cards-btn');
-            const mapBtn = document.getElementById('tab-map-btn');
-            const photosBtn = document.getElementById('tab-photos-btn');
-
-            cardsView.classList.add('hidden');
-            mapView.classList.add('hidden');
-            photosView.classList.add('hidden');
-
-            cardsBtn.className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
-            mapBtn.className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
-            photosBtn.className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
+            document.getElementById('tab-cards-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
+            document.getElementById('tab-map-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
+            document.getElementById('tab-photos-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-slate-800 text-slate-300 hover:text-white transition";
 
             if (tab === 'cards') {
-                cardsView.classList.remove('hidden');
-                cardsBtn.className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
+                document.getElementById('view-cards').classList.remove('hidden');
+                document.getElementById('tab-cards-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
             } else if (tab === 'map') {
-                mapView.classList.remove('hidden');
-                mapBtn.className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
-
-                setTimeout(() => {
-                    if (!map) initMap();
-                    if (!m2ChartInstance) initChart();
-                }, 100);
+                document.getElementById('view-map').classList.remove('hidden');
+                document.getElementById('tab-map-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
+                setTimeout(initMapAndChart, 100);
             } else if (tab === 'photos') {
-                photosView.classList.remove('hidden');
-                photosBtn.className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
-                renderPhotosGallery();
+                document.getElementById('view-photos').classList.remove('hidden');
+                document.getElementById('tab-photos-btn').className = "px-3 py-1.5 rounded-md text-sm font-medium bg-ocean-600 text-white transition";
+                renderPhotosView();
             }
         }
 
-        // Render Photos Gallery Tab
-        function renderPhotosGallery() {
-            const container = document.getElementById('photos-gallery-container');
-            container.innerHTML = properties.map(p => `
-                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                        <div>
-                            <h3 class="font-bold text-slate-900">${p.title} (${p.portal})</h3>
-                            <p class="text-xs text-slate-500">${p.address} — <strong>USD ${p.price.toLocaleString('es-AR')}</strong></p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="openPhotoModal(${p.id})" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1.5 rounded-lg font-medium transition">
-                                <i class="fa-solid fa-plus mr-1"></i> Editar Fotos
-                            </button>
-                            <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="text-xs bg-ocean-600 hover:bg-ocean-700 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
-                                Ver publicación original <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        ${p.photos.map(url => `
-                            <a href="${url}" target="_blank" class="block aspect-video bg-slate-200 rounded-lg overflow-hidden border border-slate-300 hover:opacity-90 transition group relative">
-                                <img src="${url}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x200/0f172a/ffffff?text=Sin+Imagen'">
-                                <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition">
-                                    <i class="fa-solid fa-magnifying-glass-plus"></i>
-                                </div>
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Photo URL Modal Handler
-        let activePhotoPropId = null;
-
-        function openPhotoModal(propId) {
-            activePhotoPropId = propId;
-            const prop = properties.find(p => p.id === propId);
-            if (!prop) return;
-
-            document.getElementById('photo-modal-title').innerText = `Fotos: ${prop.title}`;
-            renderPhotoUrlsList();
-            document.getElementById('photo-manage-modal').classList.remove('hidden');
-        }
-
-        function closePhotoModal() {
-            document.getElementById('photo-manage-modal').classList.add('hidden');
-            activePhotoPropId = null;
-        }
-
-        function renderPhotoUrlsList() {
-            const prop = properties.find(p => p.id === activePhotoPropId);
-            if (!prop) return;
-
-            const container = document.getElementById('photo-urls-list');
-            container.innerHTML = prop.photos.map((url, idx) => `
-                <div class="flex items-center justify-between text-xs bg-slate-100 p-2 rounded-lg gap-2">
-                    <span class="truncate flex-1 font-mono text-slate-600 text-[11px]">${url}</span>
-                    <button onclick="removePhotoUrl(${idx})" class="text-rose-600 hover:text-rose-800 p-1">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function addPhotoUrl() {
-            const input = document.getElementById('new-photo-url-input');
-            const url = input.value.trim();
-            if (!url || !activePhotoPropId) return;
-
-            const prop = properties.find(p => p.id === activePhotoPropId);
-            if (prop) {
-                prop.photos.push(url);
-                input.value = '';
-                saveData();
-                renderPhotoUrlsList();
-                renderCards();
-                showToast("Foto agregada correctamente");
+        // Map and Chart Analytics Initializer
+        function initMapAndChart() {
+            if (!map) {
+                map = L.map('map').setView([-38.2735, -57.8360], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
             }
-        }
-
-        function removePhotoUrl(index) {
-            const prop = properties.find(p => p.id === activePhotoPropId);
-            if (prop) {
-                prop.photos.splice(index, 1);
-                saveData();
-                renderPhotoUrlsList();
-                renderCards();
-                showToast("Foto eliminada");
-            }
-        }
-
-        // Leaflet Interactive Map Initialization
-        function initMap() {
-            // Centered in Miramar Center
-            map = L.map('map').setView([-38.2740, -57.8380], 14);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-
             updateMapMarkers();
+            updateChart();
         }
 
         function updateMapMarkers() {
             if (!map) return;
-            
-            // Clear old markers
-            mapMarkers.forEach(m => map.removeLayer(m));
-            mapMarkers = [];
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
 
-            properties.forEach(p => {
-                const priceM2 = Math.round(p.price / p.m2);
+            window.properties.forEach(p => {
+                const pricePerM2 = Math.round(p.price / p.m2);
                 const marker = L.marker(p.coords).addTo(map);
-
-                const popupContent = `
-                    <div style="min-width: 180px; font-family: Inter, sans-serif;">
-                        <b style="font-size:13px; color:#0f172a;">${p.title}</b><br>
-                        <span style="font-size:11px; color:#64748b;">${p.portal}</span>
-                        <hr style="margin: 6px 0; border:0; border-top:1px solid #e2e8f0;">
-                        <div style="font-size:12px;"><b>Precio:</b> USD ${p.price.toLocaleString('es-AR')}</div>
-                        <div style="font-size:12px; color:#0284c7;"><b>Valor m²:</b> USD ${priceM2}</div>
-                        <div style="font-size:11px; margin-top:4px; color:${p.visited ? '#059669' : '#d97706'};">
-                            ${p.visited ? '✓ Visitado' : '○ Pendiente de visita'}
-                        </div>
+                marker.bindPopup(`
+                    <div class="text-xs p-1">
+                        <strong class="font-bold block text-slate-800">${p.title}</strong>
+                        <p class="text-slate-500 mb-1">${p.address}</p>
+                        <div class="font-semibold text-ocean-600">USD ${p.price.toLocaleString()} (${p.m2} m²)</div>
+                        <div class="text-[11px] text-slate-600 font-bold">USD ${pricePerM2}/m²</div>
                     </div>
-                `;
-
-                marker.bindPopup(popupContent);
-                mapMarkers.push(marker);
+                `);
+                markers.push(marker);
             });
         }
 
-        // Chart.js Bar Chart for USD/m2 comparison
-        function initChart() {
-            const ctx = document.getElementById('m2Chart').getContext('2d');
-            
-            const labels = properties.map((p, index) => `#${index+1} ${p.portal.substring(0, 8)}`);
-            const dataM2 = properties.map(p => Math.round(p.price / p.m2));
+        function updateChart() {
+            const ctx = document.getElementById('m2Chart');
+            if (!ctx) return;
+
+            const labels = window.properties.map(p => `Depto #${p.id}`);
+            const dataM2 = window.properties.map(p => Math.round(p.price / p.m2));
+
+            if (m2ChartInstance) {
+                m2ChartInstance.destroy();
+            }
 
             m2ChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'USD por m²',
+                        label: 'USD / m²',
                         data: dataM2,
-                        backgroundColor: properties.map(p => p.visited ? 'rgba(16, 185, 129, 0.7)' : 'rgba(2, 132, 199, 0.7)'),
-                        borderColor: properties.map(p => p.visited ? '#10b981' : '#0284c7'),
-                        borderWidth: 1,
-                        borderRadius: 4
+                        backgroundColor: '#0284c7',
+                        borderRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` USD ${context.raw} / m²`;
-                                }
-                            }
-                        }
+                        legend: { display: false }
                     },
                     scales: {
                         y: {
                             beginAtZero: false,
-                            min: 800,
                             grid: { color: '#f1f5f9' },
-                            ticks: {
-                                callback: value => '$' + value
-                            }
+                            ticks: { font: { size: 10 } }
                         },
                         x: {
-                            grid: { display: false }
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
                         }
                     }
                 }
             });
         }
 
-        function updateChart() {
-            if (!m2ChartInstance) return;
-            m2ChartInstance.data.datasets[0].data = properties.map(p => Math.round(p.price / p.m2));
-            m2ChartInstance.data.datasets[0].backgroundColor = properties.map(p => p.visited ? 'rgba(16, 185, 129, 0.7)' : 'rgba(2, 132, 199, 0.7)');
-            m2ChartInstance.update();
+        // Edit Property Modal
+        function openEditModal(id) {
+            const modal = document.getElementById('edit-prop-modal');
+            const isNew = id === null;
+
+            document.getElementById('edit-modal-title').innerHTML = isNew 
+                ? `<i class="fa-solid fa-plus text-ocean-600"></i> Agregar Nuevo Departamento`
+                : `<i class="fa-solid fa-pen-to-square text-ocean-600"></i> Editar Departamento #${id}`;
+
+            document.getElementById('edit-id').value = isNew ? '' : id;
+
+            if (isNew) {
+                document.getElementById('edit-title').value = "Departamento 2 Ambientes en Miramar";
+                document.getElementById('edit-price').value = 42000;
+                document.getElementById('edit-m2').value = 40;
+                document.getElementById('edit-rooms').value = 2;
+                document.getElementById('edit-zone').value = "Zona 1";
+                document.getElementById('edit-portal').value = "Inmobiliaria";
+                document.getElementById('edit-address').value = "Calle 21, Miramar";
+                document.getElementById('edit-url').value = "https://www.zonaprop.com.ar";
+                document.getElementById('edit-photos').value = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80";
+            } else {
+                const prop = window.properties.find(p => p.id === id);
+                if (!prop) return;
+                document.getElementById('edit-title').value = prop.title;
+                document.getElementById('edit-price').value = prop.price;
+                document.getElementById('edit-m2').value = prop.m2;
+                document.getElementById('edit-rooms').value = prop.rooms;
+                document.getElementById('edit-zone').value = prop.zone;
+                document.getElementById('edit-portal').value = prop.portal;
+                document.getElementById('edit-address').value = prop.address;
+                document.getElementById('edit-url').value = prop.url;
+                document.getElementById('edit-photos').value = prop.photos ? prop.photos.join('\n') : '';
+            }
+
+            calculateM2Preview();
+            modal.classList.remove('hidden');
         }
 
-        // Toast Feedback Popup
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+        function closeEditModal() {
+            document.getElementById('edit-prop-modal').classList.add('hidden');
         }
 
-        // Window Load Initialization
-        window.onload = function() {
-            initApp();
-        };
+        function calculateM2Preview() {
+            const price = parseFloat(document.getElementById('edit-price').value) || 0;
+            const m2 = parseFloat(document.getElementById('edit-m2').value) || 1;
+            const res = Math.round(price / m2);
+            document.getElementById('calculated-m2-preview').innerText = `USD ${res.toLocaleString()} / m²`;
+        }
+
+        function savePropertyData(e) {
+            e.preventDefault();
+            const idVal = document.getElementById('edit-id').value;
+            const isNew = idVal === '';
+
+            const photosText = document.getElementById('edit-photos').value;
+            const photosArr = photosText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+            const propObj = {
+                id: isNew ? (window.properties.length > 0 ? Math.max(...window.properties.map(p => p.id)) + 1 : 1) : parseInt(idVal),
+                title: document.getElementById('edit-title').value,
+                price: parseFloat(document.getElementById('edit-price').value),
+                m2: parseFloat(document.getElementById('edit-m2').value),
+                rooms: parseInt(document.getElementById('edit-rooms').value),
+                zone: document.getElementById('edit-zone').value,
+                portal: document.getElementById('edit-portal').value,
+                address: document.getElementById('edit-address').value,
+                url: document.getElementById('edit-url').value,
+                photos: photosArr.length > 0 ? photosArr : ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"],
+                visited: isNew ? false : (window.properties.find(p => p.id === parseInt(idVal))?.visited || false),
+                rating: isNew ? 3 : (window.properties.find(p => p.id === parseInt(idVal))?.rating || 3),
+                coords: isNew ? [-38.2735, -57.8360] : (window.properties.find(p => p.id === parseInt(idVal))?.coords || [-38.2735, -57.8360]),
+                pros: isNew ? ["Buena ubicación"] : (window.properties.find(p => p.id === parseInt(idVal))?.pros || []),
+                cons: isNew ? ["Sin cochera"] : (window.properties.find(p => p.id === parseInt(idVal))?.cons || []),
+                notes: isNew ? "" : (window.properties.find(p => p.id === parseInt(idVal))?.notes || "")
+            };
+
+            if (isNew) {
+                window.properties.push(propObj);
+            } else {
+                const idx = window.properties.findIndex(p => p.id === parseInt(idVal));
+                if (idx !== -1) window.properties[idx] = propObj;
+            }
+
+            closeEditModal();
+            triggerDataChange();
+        }
+
+        // Pros & Cons Modal
+        function openProConModal(id) {
+            const prop = window.properties.find(p => p.id === id);
+            if (!prop) return;
+
+            document.getElementById('procon-id').value = id;
+            
+            const prosContainer = document.getElementById('pros-input-list');
+            prosContainer.innerHTML = '';
+            if (prop.pros) prop.pros.forEach(pro => addProInput(pro));
+
+            const consContainer = document.getElementById('cons-input-list');
+            consContainer.innerHTML = '';
+            if (prop.cons) prop.cons.forEach(con => addConInput(con));
+
+            document.getElementById('procon-modal').classList.remove('hidden');
+        }
+
+        function closeProConModal() {
+            document.getElementById('procon-modal').classList.add('hidden');
+        }
+
+        function addProInput(value = '') {
+            const div = document.createElement('div');
+            div.className = "flex items-center space-x-2";
+            div.innerHTML = `
+                <input type="text" value="${value}" placeholder="Ej. Muy luminoso" class="pro-input flex-1 p-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
+            `;
+            document.getElementById('pros-input-list').appendChild(div);
+        }
+
+        function addConInput(value = '') {
+            const div = document.createElement('div');
+            div.className = "flex items-center space-x-2";
+            div.innerHTML = `
+                <input type="text" value="${value}" placeholder="Ej. Sin ascensor" class="con-input flex-1 p-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-rose-500 focus:outline-none">
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
+            `;
+            document.getElementById('cons-input-list').appendChild(div);
+        }
+
+        function saveProCons() {
+            const id = parseInt(document.getElementById('procon-id').value);
+            const prop = window.properties.find(p => p.id === id);
+            if (!prop) return;
+
+            const pros = Array.from(document.querySelectorAll('.pro-input')).map(i => i.value.trim()).filter(v => v.length > 0);
+            const cons = Array.from(document.querySelectorAll('.con-input')).map(i => i.value.trim()).filter(v => v.length > 0);
+
+            prop.pros = pros;
+            prop.cons = cons;
+
+            closeProConModal();
+            triggerDataChange();
+        }
+
+        // Render Photo Gallery & Links View
+        function renderPhotosView() {
+            const container = document.getElementById('photos-links-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            window.properties.forEach(p => {
+                const item = document.createElement('div');
+                item.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3";
+
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">${p.title}</h3>
+                            <p class="text-xs text-slate-500">${p.address} | ${p.portal}</p>
+                        </div>
+                        <a href="${p.url}" target="_blank" class="bg-ocean-600 hover:bg-ocean-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver aviso original
+                        </a>
+                    </div>
+
+                    <!-- Photo grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+                        ${p.photos ? p.photos.map(photo => `
+                            <div class="h-32 rounded-lg overflow-hidden border border-slate-200 bg-slate-200">
+                                <img src="${photo}" alt="Foto propiedad" class="w-full h-full object-cover hover:scale-105 transition duration-300" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80'">
+                            </div>
+                        `).join('') : ''}
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+        }
     </script>
 </body>
 </html>
