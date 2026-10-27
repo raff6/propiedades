@@ -214,12 +214,10 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
 </div>
 </div>
 
-<!-- CLOUD SYNC (KVdb) -->
+<!-- CLOUD SYNC (Firebase Realtime Database) -->
 <script>
 (function () {
-    const BUCKET = 'F4vhP5G2R7Fk6rxpzrvppt';
-    const KEY = 'deptos';
-    const URL_KV = `https://kvdb.io/${BUCKET}/${KEY}`;
+    const DB_URL = 'https://dptos-d8c35-default-rtdb.firebaseio.com/deptos.json';
     let remoteStamp = 0, pushTimer = null, pushing = false;
 
     function setStatus(text, color, icon) {
@@ -238,23 +236,26 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
                           !document.getElementById('procon-modal').classList.contains('hidden');
         return typing || modalOpen;
     }
+    // Firebase no guarda listas vacías: las restauramos al leer
+    function normalize(items) {
+        return items.filter(Boolean).map(p => ({
+            ...p,
+            pros: Array.isArray(p.pros) ? p.pros : [],
+            cons: Array.isArray(p.cons) ? p.cons : [],
+            photos: (Array.isArray(p.photos) && p.photos.length) ? p.photos : [FALLBACK_IMG],
+            notes: p.notes || ''
+        }));
+    }
 
     window.pullFromCloud = async function (force) {
         if (pushTimer || pushing) return;
         try {
-            const r = await fetch(URL_KV, { cache: 'no-store' });
-            let data = null;
-            if (r.status === 404) {
-                data = null; // todavía no hay datos en la nube
-            } else if (!r.ok) {
-                throw new Error('GET ' + r.status);
-            } else {
-                const txt = await r.text();
-                try { data = JSON.parse(txt); } catch (e) { data = null; }
-            }
+            const r = await fetch(DB_URL, { cache: 'no-store' });
+            if (!r.ok) throw new Error('GET ' + r.status);
+            const data = await r.json();
 
             // Nube vacía: subir los datos locales la primera vez
-            if (!data || !Array.isArray(data.items) || data.items.length === 0) {
+            if (!data || !data.items || Object.keys(data.items).length === 0) {
                 window.syncToCloud();
                 return;
             }
@@ -262,7 +263,8 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
             if ((data.updatedAt || 0) !== remoteStamp) {
                 if (!force && userIsEditing()) return;
                 remoteStamp = data.updatedAt || 0;
-                window.properties = data.items;
+                const list = Array.isArray(data.items) ? data.items : Object.values(data.items);
+                window.properties = normalize(list);
                 window.saveLocalData();
                 window.initUI();
                 if (typeof map !== 'undefined' && map) updateMapMarkers();
@@ -283,15 +285,11 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:
             pushing = true;
             const stamp = Date.now();
             try {
-                let r = await fetch(URL_KV, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload(stamp) });
+                const r = await fetch(DB_URL, { method: 'PUT', body: payload(stamp) });
                 if (!r.ok) {
-                    const postStatus = r.status;
-                    r = await fetch(URL_KV, { method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: payload(stamp) });
-                    if (!r.ok) {
-                        let body = '';
-                        try { body = (await r.text()).slice(0, 80); } catch (e) {}
-                        throw new Error('POST ' + postStatus + ' / PUT ' + r.status + ' ' + body);
-                    }
+                    let body = '';
+                    try { body = (await r.text()).slice(0, 80); } catch (e) {}
+                    throw new Error('PUT ' + r.status + ' ' + body);
                 }
                 remoteStamp = stamp;
                 setStatus('Nube Activa', 'text-emerald-400', 'fa-cloud-arrow-up');
