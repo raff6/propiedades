@@ -45,7 +45,42 @@ html{-webkit-text-size-adjust:100%}
   #edit-prop-form .grid-cols-3{grid-template-columns:1fr!important}
   #photos-links-container>div>div:first-child{flex-wrap:wrap;gap:.5rem}
 }
+
+/* ===== TEMA OSCURO ===== */
+html.dark{background-color:#0b1120!important;color-scheme:dark}
+html.dark body{color:#e2e8f0}
+html.dark .bg-white{background-color:#131c31!important}
+html.dark .bg-slate-50,html.dark .bg-slate-50\/50{background-color:#1a2540!important}
+html.dark .bg-slate-100{background-color:#1e293b!important}
+html.dark .bg-slate-200{background-color:#334155!important}
+html.dark .border-slate-100,html.dark .border-slate-200,html.dark .border-slate-300{border-color:#2b3a55!important}
+html.dark .text-slate-800{color:#f1f5f9!important}
+html.dark .text-slate-700{color:#e2e8f0!important}
+html.dark .text-slate-600{color:#cbd5e1!important}
+html.dark .text-slate-500{color:#94a3b8!important}
+html.dark .text-emerald-700{color:#6ee7b7!important}
+html.dark .text-emerald-600{color:#34d399!important}
+html.dark .text-rose-700{color:#fda4af!important}
+html.dark .text-rose-600{color:#fb7185!important}
+html.dark .text-ocean-600{color:#38bdf8!important}
+html.dark .text-ocean-700{color:#7dd3fc!important}
+html.dark .text-ocean-900{color:#bae6fd!important}
+html.dark .bg-ocean-50{background-color:rgba(14,165,233,.12)!important}
+html.dark .border-ocean-100{border-color:rgba(14,165,233,.3)!important}
+html.dark .ring-emerald-200{--tw-ring-color:rgba(16,185,129,.4)!important}
+html.dark .hover\:bg-slate-100:hover{background-color:#1e293b!important}
+html.dark input,html.dark select,html.dark textarea{background-color:#0f1a2e!important;color:#e2e8f0!important;border-color:#334155!important}
+html.dark ::placeholder{color:#64748b!important}
+/* Mapa */
+html.dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.95) contrast(.9)}
+html.dark .leaflet-popup-content-wrapper,html.dark .leaflet-popup-tip{background:#131c31;color:#e2e8f0}
+html.dark .leaflet-container{background:#0b1120}
+html.dark .leaflet-control-attribution{background:rgba(15,23,42,.8)!important;color:#94a3b8!important}
+html.dark .leaflet-control-attribution a{color:#7dd3fc!important}
 </style>
+<script>
+try{if(localStorage.getItem('miramar_theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}
+</script>
 </head>
 <body class="h-full font-sans text-slate-800 flex flex-col">
 
@@ -69,6 +104,10 @@ html{-webkit-text-size-adjust:100%}
 <i class="fa-solid fa-cloud-arrow-up text-sky-400"></i>
 <span class="text-[11px]" id="cloud-status-text">Conectando...</span>
 </div>
+
+<button id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+<i id="theme-icon" class="fa-solid fa-moon"></i><span class="hidden lg:inline" id="theme-label">Oscuro</span>
+</button>
 
 <button onclick="refreshApp()" title="Actualizar datos" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm active:scale-95">
 <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i><span class="hidden sm:inline">Actualizar Página</span>
@@ -371,7 +410,23 @@ const INITIAL_PROPERTIES = [
 window.properties = [];
 let photoIndexes = {}, map = null, markers = [], m2ChartInstance = null;
 
-window.addEventListener('DOMContentLoaded', () => { loadPropertiesData(); });
+function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    const i = document.getElementById('theme-icon'), l = document.getElementById('theme-label');
+    if (i) i.className = 'fa-solid ' + (dark ? 'fa-sun' : 'fa-moon');
+    if (l) l.innerText = dark ? 'Claro' : 'Oscuro';
+    if (m2ChartInstance) updateChart();
+}
+function toggleTheme() {
+    const dark = !document.documentElement.classList.contains('dark');
+    try { localStorage.setItem('miramar_theme', dark ? 'dark' : 'light'); } catch (e) {}
+    applyTheme(dark);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    applyTheme(document.documentElement.classList.contains('dark'));
+    loadPropertiesData();
+});
 
 window.refreshApp = function () {
     const icon = document.getElementById('refresh-icon');
@@ -666,17 +721,19 @@ function updateChart() {
     if (!ctx) return;
     const labels = window.properties.map(p => `Depto #${p.id}`);
     const dataM2 = window.properties.map(p => Math.round(p.price / p.m2));
+    const dark = document.documentElement.classList.contains('dark');
+    const tickColor = dark ? '#94a3b8' : '#64748b';
     if (m2ChartInstance) m2ChartInstance.destroy();
     m2ChartInstance = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ label: 'USD / m²', data: dataM2, backgroundColor: '#0284c7', borderRadius: 6 }] },
+        data: { labels, datasets: [{ label: 'USD / m²', data: dataM2, backgroundColor: dark ? '#38bdf8' : '#0284c7', borderRadius: 6 }] },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                y: { beginAtZero: false, grid: { color: dark ? '#1e293b' : '#f1f5f9' }, ticks: { color: tickColor, font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 10 } } }
             }
         }
     });
